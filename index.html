@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="format-detection" content="telephone=no" />
+<title>L'84 FIFA 2026</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  html { font-size: 16px; text-size-adjust: 100%; -webkit-text-size-adjust: 100%; width: 100%; min-width: 0; }
+  body { width: 100%; min-width: 0; overflow-x: hidden; }
+
+  :root{
+    /* Light theme (default) — cool paper, L84 red, pitch green, amber */
+    --ink:#EFF1F4;        /* page background */
+    --surface:#FFFFFF;    /* cards */
+    --surface-2:#E7EAEF;  /* raised */
+    --line:rgba(18,22,30,.10);
+    --line-2:rgba(18,22,30,.16);
+    --paper:#171A20;      /* primary text */
+    --muted:#586069;      /* secondary text */
+    --faint:#8A919C;      /* tertiary */
+    --red:#D2362F;        /* L84 brand red */
+    --red-dim:#FBE5E4;
+    --green:#1C964F;      /* points / win */
+    --green-dim:#E1F2E8;
+    --amber:#A9710F;      /* pending / locked */
+    --amber-dim:#F8EFD6;
+    --blue:#2B79C7;
+    --bar:rgba(239,241,244,.85);
+    --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --ui: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#15171C; --surface:#1E2128; --surface-2:#262A33;
+      --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.14);
+      --paper:#ECEEF2; --muted:#969DA9; --faint:#6A707B;
+      --red:#E23B40; --red-dim:#3a1f22;
+      --green:#34C26C; --green-dim:#1d3328;
+      --amber:#E2A23C; --amber-dim:#362c18;
+      --blue:#5BA7E8; --bar:rgba(21,23,28,.86);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ink); color:var(--paper); font-family:var(--ui);
+    -webkit-font-smoothing:antialiased; line-height:1.45;
+    padding-bottom:env(safe-area-inset-bottom); overflow-x:hidden;
+  }
+  .wrap{max-width:540px; margin:0 auto; min-height:100vh; position:relative}
+
+  /* ---------- App bar ---------- */
+  .appbar{
+    position:sticky; top:0; z-index:40; background:var(--bar);
+    backdrop-filter:saturate(140%) blur(10px);
+    border-bottom:1px solid var(--line); padding:10px 14px 8px;
+  }
+  .brandrow{display:flex; align-items:center; gap:10px}
+  .crest{width:30px;height:30px;border-radius:7px;background:var(--red);
+    display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;
+    letter-spacing:.02em;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+  .brand{min-width:0; flex:1 1 auto}
+  .brand h1{font-size:14.5px;margin:0;font-weight:700;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand .sub{font-size:10.5px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .spacer{flex:0}
+  .iconbtn{
+    border:1px solid var(--line-2); background:var(--surface-2); color:var(--paper);
+    border-radius:9px; padding:8px 10px; font-size:12px; font-weight:600;
+    display:inline-flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap; flex:none;
+  }
+  .iconbtn:active{transform:translateY(1px)}
+  .iconbtn.red{background:var(--red);border-color:transparent}
+
+  /* Identity bar (replaces old "You are" dropdown) */
+  .actingrow{display:flex;align-items:center;gap:8px;margin-top:9px;padding:6px 12px;background:var(--surface);border-radius:9px;border:1px solid var(--line-2)}
+  .acting-label{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+  .acting-name{font-size:14px;font-weight:750;flex:1;color:var(--paper)}
+  .acting-reset{font-size:10px;color:var(--blue);background:none;border:none;cursor:pointer;padding:2px 4px;font-family:var(--ui);font-weight:600}
+
+  /* Full-screen identity picker */
+  #idScreen{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center;padding:0}
+  #idCard{background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px max(20px,env(safe-area-inset-bottom));width:100%;max-height:85vh;display:flex;flex-direction:column}
+  #idTitle{font-size:20px;font-weight:800;margin-bottom:3px;color:var(--paper);flex-shrink:0}
+  #idSub{font-size:12px;color:var(--faint);margin-bottom:14px;flex-shrink:0}
+  #idList{display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .idname{background:var(--ink);border:1px solid var(--line-2);border-radius:10px;padding:13px 10px;font-size:13px;font-weight:650;color:var(--paper);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;user-select:none}
+  .idname:active{background:var(--red);border-color:var(--red);color:#fff}
+  #idAddBtn{grid-column:1/-1;background:var(--blue);border:none;border-radius:10px;padding:13px 10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;user-select:none;margin-top:4px}
+  #idAddBtn:active{opacity:.8}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex; gap:4px; padding:8px 12px 0; position:sticky; top:0; z-index:30}
+  .tab{
+    flex:1; text-align:center; padding:9px 4px; font-size:12.5px; font-weight:700;
+    color:var(--muted); border:0; background:transparent; cursor:pointer;
+    border-bottom:2px solid transparent; letter-spacing:.02em; font-family:var(--ui);
+  }
+  .tab.active{color:var(--paper); border-bottom-color:var(--red)}
+
+  .view{padding:12px 12px 90px; display:none}
+  .view.active{display:block}
+
+  .note{font-size:11.5px;color:var(--faint); margin:2px 2px 12px; line-height:1.5}
+  .segrow{display:flex; align-items:center; gap:6px; margin:0 2px 12px; flex-wrap:wrap}
+  .segrow .lbl{font-size:11px;color:var(--muted);font-weight:700;margin-right:2px}
+  .seg{background:var(--surface); border:1px solid var(--line-2); color:var(--muted);
+    border-radius:8px; padding:7px 11px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:var(--ui)}
+  .seg.active{background:var(--red); border-color:transparent; color:#fff}
+  .seg:active{transform:translateY(1px)}
+
+  /* ---------- Mobile font boost ---------- */
+  @media(max-width:768px){
+    .t-name{font-size:16px!important}
+    .score{font-size:22px!important}
+    .vs{font-size:15px!important}
+    .chip{font-size:11px!important;padding:3px 8px!important}
+    .m-meta{font-size:12px!important}
+    .m-foot{font-size:13px!important}
+    .pname{font-size:16px!important}
+    .wl{font-size:14px!important}
+    .pts{font-size:20px!important}
+    .rank{font-size:15px!important}
+    .tab{font-size:15px!important;padding:12px 4px!important}
+    .seg{font-size:13.5px!important;padding:9px 14px!important}
+    .dayhdr .d{font-size:15px!important}
+    .daysummary{font-size:12px!important}
+    .note{font-size:14px!important}
+    .note.legend ul li{font-size:14px!important}
+    .idname{font-size:16px!important;padding:16px 10px!important}
+    .wrow .nm{font-size:16px!important}
+    .wrow .pk{font-size:18px!important}
+    .acting-name{font-size:17px!important}
+    .acting-label{font-size:12px!important}
+    .iconbtn{font-size:13px!important;padding:8px 11px!important}
+    .whdr{font-size:12px!important}
+    h2{font-size:22px!important}
+    .sub{font-size:13px!important}
+    .wlist .lhdr{font-size:13px!important}
+    .fld label{font-size:14px!important}
+    .fld select,.fld input{font-size:16px!important}
+    .btn{font-size:16px!important;padding:15px!important}
+    .lt-head{font-size:11px!important}
+    .lt-row{padding:12px!important}
+    .logtext{font-size:14px!important}
+    .logtime{font-size:12px!important}
+    .wrap{max-width:100%!important}
+  }
+  .tablecard{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden}
+  .lt-head, .lt-row{display:grid; grid-template-columns:26px 1fr 52px 60px; align-items:center; gap:8px; padding:10px 12px}
+  .lt-head{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--faint);font-weight:700;
+    border-bottom:1px solid var(--line); background:var(--surface-2)}
+  .lt-head .sorth{cursor:pointer;-webkit-user-select:none;user-select:none}
+  .lt-head .sorth:active{color:var(--paper)}
+  .sarr{color:var(--red);font-size:9px}
+  .lt-row{border-top:1px solid var(--line); cursor:pointer}
+  .lt-row:first-child{border-top:0}
+  .lt-row:active{background:var(--surface-2)}
+  .rank{font-family:var(--mono); font-size:13px; color:var(--muted); text-align:center}
+  .rank.r1{color:#F4C24B} .rank.r2{color:#C7CDD6} .rank.r3{color:#D08B4E}
+  .pname{font-weight:600; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .pname .pmeta{font-size:10.5px;color:var(--faint);font-weight:500}
+  .pts{font-family:var(--mono); font-size:17px; font-weight:700; text-align:right; color:var(--green)}
+  .pts.zero{color:var(--faint)}
+  .wl{font-family:var(--mono); font-size:11.5px; text-align:right; color:var(--muted)}
+  .wl b{color:var(--green)} .wl s{color:var(--faint);text-decoration:none}
+  .pend{display:block;font-size:9.5px;color:var(--amber)}
+
+  /* ---------- Schedule ---------- */
+  .daygroup{margin-bottom:14px}
+  .dayhdr{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;
+    padding:6px 2px;margin:0 0 7px;cursor:pointer;font-family:var(--ui);color:var(--paper);text-align:left}
+  .dayhdr:active{opacity:.7}
+  .dayhdr .d{font-size:12px;font-weight:800;letter-spacing:.02em}
+  .dayhdr .line{flex:1;height:1px;background:var(--line)}
+  .daycaret{color:var(--faint);font-size:11px;transition:transform .15s}
+  .daycaret.open{transform:rotate(180deg)}
+  .daysummary{font-size:10px;color:var(--faint);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48%}
+  .daybody.collapsed{display:none}
+  /* Day era colours: past = dimmed, today = green accent, future = full contrast */
+  .daygroup.era-past .dayhdr .d,
+  .daygroup.era-past .daysummary{ color:var(--faint); }
+  .daygroup.era-past .dayhdr .line{ background:var(--line); opacity:.5; }
+  .daygroup.era-past .daycaret{ opacity:.4; }
+
+  .daygroup.era-today .dayhdr{ background:var(--green-dim); border-radius:8px; padding:4px 6px; margin-bottom:4px; }
+  .daygroup.era-today .dayhdr .d{ color:var(--green); font-size:13px; }
+  .daygroup.era-today .daysummary{ color:var(--green); opacity:.8; }
+  .daygroup.era-today .dayhdr .line{ background:var(--green); opacity:.3; }
+  .daygroup.era-today .daycaret{ color:var(--green); }
+
+  .daygroup.era-future-empty .dayhdr .d{ color:var(--muted); }
+  .daygroup.era-future-empty .daysummary{ color:var(--faint); opacity:.7; }
+  .daygroup.era-future-empty .dayhdr .line{ opacity:.5; }
+  .daygroup.era-future-empty .daycaret{ opacity:.5; }
+
+  .match{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:10px 12px; margin-bottom:8px; cursor:pointer; position:relative;
+  }
+  .match:active{background:var(--surface-2)}
+  .match.placeholder{cursor:default; opacity:.72}
+  .m-top{display:flex; align-items:center; gap:8px; margin-bottom:7px}
+  .chip{font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    padding:3px 7px; border-radius:999px; white-space:nowrap}
+  .chip.open{background:var(--green-dim); color:var(--green)}
+  .chip.locked{background:var(--amber-dim); color:var(--amber)}
+  .chip.played{background:var(--red-dim); color:var(--red)}
+  .chip.ph{background:var(--surface-2); color:var(--faint)}
+  .m-meta{font-size:10.5px; color:var(--faint); font-family:var(--mono); margin-left:auto; text-align:right; white-space:nowrap}
+  .m-teams{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px}
+  .t-name{font-size:13.5px; font-weight:650}
+  .t-name.home{text-align:right}
+  .t-name.away{text-align:left}
+  .match.status-open .t-name{color:var(--green)}
+  .vs{font-family:var(--mono); font-size:12px; color:var(--faint); padding:0 2px; white-space:nowrap}
+  .score{font-family:var(--mono); font-size:18px; font-weight:800; letter-spacing:.04em}
+  .m-foot{margin-top:7px; font-size:11px; color:var(--muted); display:flex; gap:6px; align-items:center}
+  .m-foot .dot{width:3px;height:3px;border-radius:50%;background:var(--faint)}
+  .wcount{color:var(--blue); font-weight:600}
+  /* peek / expand on schedule card */
+  .match.expandable{cursor:pointer}
+  .caret{margin-left:auto;color:var(--faint);font-size:11px;transition:transform .15s}
+  .peek{display:none;margin-top:9px;border-top:1px dashed var(--line-2);padding-top:8px}
+  .match.open .peek{display:block}
+  .match.open .caret{transform:rotate(180deg)}
+  .pk-head{display:grid;grid-template-columns:1fr 58px 26px 28px;gap:8px;padding:2px 2px 6px;
+    font-size:9px;text-transform:uppercase;letter-spacing:.03em;color:var(--faint);font-weight:700;border-bottom:1px solid var(--line)}
+  .pk-head div:nth-child(n+2){text-align:right}
+  .pk-row{display:grid;grid-template-columns:1fr 58px 26px 28px;gap:8px;align-items:center;padding:7px 2px;font-size:12px}
+  .pk-row .who{min-width:0}
+  .pk-row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pk-row .sub2{font-size:10px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pk-row .sub2 .recw{color:var(--green);font-weight:700} .pk-row .sub2 .recl{font-weight:700}
+  .pk-row .pkk{font-family:var(--mono);font-weight:800;font-size:14px;text-align:right}
+  .pk-row .wlc{font-family:var(--mono);font-weight:800;font-size:11px;text-align:right}
+  .pk-row .wlc.win{color:var(--green)} .pk-row .wlc.loss{color:var(--red)} .pk-row .wlc.pend{color:var(--faint)}
+  .pk-row .pp{font-family:var(--mono);font-weight:800;font-size:13px;text-align:right}
+  .pk-row .pp.win{color:var(--green)} .pk-row .pp.loss{color:var(--faint)} .pk-row .pp.pend{color:var(--amber)}
+  .pk-empty{font-size:11.5px;color:var(--faint);padding:6px 2px}
+  .pk-cta{width:100%;margin-top:8px;background:var(--surface-2);border:1px solid var(--line-2);
+    color:var(--paper);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ui)}
+  .pk-cta:active{transform:translateY(1px)}
+  .freshline{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin:-4px 2px 12px;display:flex;align-items:center;gap:6px}
+  .freshline::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);flex:none}
+  .freshline.stale{color:var(--amber)}
+  .freshline.stale::before{background:var(--amber)}
+
+  /* ---------- Activity log ---------- */
+  .logitem{display:flex; gap:10px; padding:10px 4px; border-bottom:1px solid var(--line)}
+  .logitem .tl{width:6px;flex:none;display:flex;justify-content:center;padding-top:5px}
+  .logitem .tl i{width:7px;height:7px;border-radius:50%;background:var(--faint);display:block}
+  .logitem.create .tl i{background:var(--green)}
+  .logitem.edit .tl i{background:var(--amber)}
+  .logitem.result .tl i{background:var(--red)}
+  .logitem.member .tl i{background:var(--blue)}
+  .logbody{flex:1; min-width:0}
+  .logtext{font-size:12.5px; line-height:1.45}
+  .logtext b{font-weight:700}
+  .logtext .sl{font-family:var(--mono); font-weight:700}
+  .logtime{font-size:10px; color:var(--faint); font-family:var(--mono); margin-top:2px}
+  .bf{font-size:9px;font-weight:800;color:var(--amber);background:var(--amber-dim);
+    padding:1px 5px;border-radius:5px;letter-spacing:.05em;text-transform:uppercase;margin-left:5px}
+
+  /* ---------- Sheet / modal ---------- */
+  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:60; display:none}
+  .scrim.show{display:block}
+  .sheet{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:0; z-index:70;
+    width:100%; max-width:540px; max-height:92vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background:var(--surface); border:1px solid var(--line); border-radius:18px 18px 0 0;
+    padding:6px 16px calc(40px + env(safe-area-inset-bottom)); display:none;
+  }
+  .sheet.show{display:block}
+  .grab{width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:8px auto 12px}
+  .sheet h2{font-size:16px;margin:0 0 2px}
+  .sheet .sub{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+  .closebtn{position:absolute;top:12px;right:14px;background:var(--surface-2);border:1px solid var(--line-2);
+    color:var(--paper);border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer;z-index:5}
+  .closebtn:active{background:var(--line-2)}
+
+  .scorebig{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;
+    background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:14px 12px;margin-bottom:14px}
+  .scorebig .tn{font-size:14px;font-weight:700}
+  .scorebig .tn.h{text-align:right}
+  .scorebig .sc{font-family:var(--mono);font-size:26px;font-weight:800;letter-spacing:.06em;text-align:center}
+  .scorebig .sc small{display:block;font-size:9px;letter-spacing:.1em;color:var(--faint);font-weight:700;text-transform:uppercase}
+
+  .formrow{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px}
+  .fld label{font-size:11px;color:var(--muted);font-weight:700;display:block;margin:0 0 5px;letter-spacing:.03em}
+  .fld select, .fld input{
+    width:100%; background:var(--surface-2); color:var(--paper); border:1.5px solid var(--blue);
+    border-radius:9px; padding:10px; font-size:14px; font-family:var(--ui); font-weight:600;
+  }
+  .fld select:focus, .fld input:focus{ outline:none; border-color:var(--red); }
+  /* brighter card background for open (pre-kickoff) match entry form */
+  .formcard{background:var(--surface);border:1.5px solid var(--red);border-radius:12px;padding:14px 12px;margin-bottom:14px}
+  .scoreinputs{display:grid;grid-template-columns:1fr 28px 1fr;align-items:end;gap:8px}
+  .scoreinputs .mid{text-align:center;font-family:var(--mono);color:var(--faint);padding-bottom:11px;font-size:16px}
+  .scoreinputs input{text-align:center;font-family:var(--mono);font-size:20px;font-weight:800}
+  .teamcap{font-size:11px;color:var(--muted);text-align:center;margin-bottom:5px;font-weight:600;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .btn{width:100%;background:var(--red);color:#fff;border:0;border-radius:10px;padding:12px;
+    font-size:14px;font-weight:700;cursor:pointer;font-family:var(--ui)}
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:var(--surface-2);color:var(--paper);border:1px solid var(--line-2)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+
+  .lockbox{background:var(--amber-dim);border:1px solid var(--line-2);border-radius:10px;
+    padding:11px 12px;margin-bottom:12px;font-size:12px;color:var(--amber)}
+  .lockbox b{color:var(--amber)}
+  .linkbtn{background:none;border:0;color:var(--amber);font-weight:700;font-size:12px;cursor:pointer;
+    padding:0;text-decoration:underline;font-family:var(--ui)}
+
+  .note.legend ul{margin:6px 0 0 0;padding-left:18px}
+  .note.legend ul li{margin:3px 0;font-size:11px}
+  .collapse-bar{display:flex;justify-content:flex-end;margin:-6px 2px 8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  #collapseAllBtn{background:var(--blue);border-color:transparent;color:#fff}
+  .wlist .lhdr{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);
+    font-weight:700;margin:14px 2px 4px;display:flex;justify-content:space-between}
+  .whdr{display:flex;justify-content:space-between;font-size:9px;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--faint);font-weight:700;padding:0 10px 6px;border-bottom:1px solid var(--line)}
+  .wrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-bottom:1px solid var(--line);margin:0;position:relative}
+  .wrow:last-child{border-bottom:none}
+  .wrow .nm{flex:1;font-size:13px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wrow .by{font-size:10px;color:var(--faint);white-space:nowrap}
+  .wrow .pk{font-family:var(--mono);font-size:15px;font-weight:800;white-space:nowrap}
+  .wrow.mine{background:var(--green-dim)}
+
+  .empty{text-align:center;color:var(--faint);font-size:12.5px;padding:24px 12px}
+
+  /* player detail rows */
+  .ph-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+  .ph-row .mt{flex:1;min-width:0}
+  .ph-row .mt .a{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ph-row .mt .b{font-size:10px;color:var(--faint);font-family:var(--mono)}
+  .ph-row .pick{font-family:var(--mono);font-size:13px;font-weight:700;text-align:right}
+  .ph-row .pick small{display:block;font-size:9px;color:var(--faint);font-weight:600}
+  .ph-row .pp{font-family:var(--mono);font-size:14px;font-weight:800;width:34px;text-align:right}
+  .ph-row .pp.win{color:var(--green)} .ph-row .pp.loss{color:var(--faint)} .ph-row .pp.pend{color:var(--amber)}
+  .ph-summary{display:flex;gap:14px;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:12px;padding:12px;margin-bottom:8px}
+  .ph-summary .stat{flex:1;text-align:center}
+  .ph-summary .stat .v{font-family:var(--mono);font-size:20px;font-weight:800}
+  .ph-summary .stat .l{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:700}
+
+  textarea.exp{width:100%;height:200px;background:var(--ink);color:var(--paper);border:1px solid var(--line-2);
+    border-radius:10px;padding:10px;font-family:var(--mono);font-size:11px;resize:vertical}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+    background:#23272F;color:#fff;font-size:13px;font-weight:700;padding:10px 16px;border-radius:10px;
+    z-index:90;opacity:0;transition:.25s;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.4);max-width:90%}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .protobadge{font-size:9px;font-weight:800;color:var(--amber);border:1px solid rgba(226,162,60,.4);
+    padding:2px 6px;border-radius:5px;letter-spacing:.06em}
+
+</style>
+<script>
+// Proven fix for Google Apps Script IFRAME-mode viewport on mobile.
+// GAS ignores the static <meta viewport>; it must be (re)set via JS at runtime
+// with maximum-scale=1.0 and user-scalable=no for mobile browsers to honour it.
+(function(){
+  var meta = document.querySelector('meta[name="viewport"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'viewport';
+    document.getElementsByTagName('head')[0].appendChild(meta);
+  }
+  meta.setAttribute('content',
+    'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+})();
+</script>
+</head>
+<body>
+<!-- Identity picker — full screen, shown only until identity is set -->
+<div id="idScreen" style="display:none">
+  <div id="idCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0">
+      <div id="idTitle">Who are you?</div>
+      <button id="idCloseBtn" style="display:none;background:var(--surface-2);border:1px solid var(--line-2);color:var(--paper);border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer;font-family:var(--ui);flex-shrink:0">✕</button>
+    </div>
+    <div id="idSub">Tap your name — this device will remember you.</div>
+    <div id="idList"></div>
+    <button id="idCancelBtn" style="display:none;width:100%;margin-top:10px;padding:11px;background:none;border:1px solid var(--line-2);border-radius:10px;color:var(--faint);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--ui)">Cancel — keep current identity</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="appbar">
+    <div class="brandrow">
+      <div class="crest">L84</div>
+      <div class="brand">
+        <h1>L'84 · FIFA 2026</h1>
+        <div class="sub">Prototype · we are 26</div>
+      </div>
+      <button class="iconbtn" id="rulesBtn">Rules</button>
+      <button class="iconbtn" id="exportBtn">Export</button>
+      <button class="iconbtn red" id="refreshBtn">↻ Scores</button>
+    </div>
+    <div class="actingrow" id="actingrow">
+      <span class="acting-label">Playing as</span>
+      <span class="acting-name" id="actingName">—</span>
+      <button class="acting-reset" id="actingReset" title="Not you? Switch identity">not you?</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="schedule">Schedule</button>
+      <button class="tab" data-tab="table">Participants</button>
+      <button class="tab" data-tab="log">Activity</button>
+    </div>
+  </div>
+
+  <div class="view active" id="view-schedule">
+    <div class="segrow"><span class="lbl">Times in</span>
+      <button class="seg active" data-tz="PDT">California · PDT</button>
+      <button class="seg" data-tz="IST">India · IST</button></div>
+    <div class="freshline stale" id="freshline">Scores not refreshed yet — tap ↻ Scores above</div>
+    <div class="note legend">Wager closes the moment a match kicks off.
+      <ul>
+        <li>Tap a match to show its wagers; tap again to collapse.</li>
+        <li>The button inside opens it to enter or edit.</li>
+        <li>Switching to IST may shift the clock to the following day (since most kickoffs start after midnight India time), so the date may move to the next day.</li>
+        <li>Knockouts are placeholders until teams are decided.</li>
+      </ul>
+    </div>
+    <div class="collapse-bar"><button class="seg" id="collapseAllBtn">Collapse all</button></div>
+    <div id="schedule"></div>
+  </div>
+
+  <div class="view" id="view-table">
+    <div class="note">Ranked by total points. <b>3</b> for the right outcome <i>or</i> the right scoreline (1‑2 and 2‑1 count the same), <b>6</b> for both. Tap a column header to re-sort; tap a name for their match-by-match record. <button class="linkbtn" id="addMemberBtn">+ Add member</button></div>
+    <div class="tablecard" id="leaderboard"></div>
+  </div>
+
+  <div class="view" id="view-log">
+    <div class="note">Every wager, edit, and result — permanent and in order. Backfilled (post-kickoff) entries are flagged.</div>
+    <div id="logfeed"></div>
+  </div>
+
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"></div>
+<div class="toast" id="toast"></div>
+<script>
+
+/* ============================================================
+   L'84 FIFA 2026 — wager pool (prototype)
+   ============================================================ */
+
+/* ---------- Fixtures: 72 group matches (PDT) + knockout placeholders ---------- */
+// koUTC = kickoff instant (PT + 7h). dl = date label (PDT), tm = time label (PDT).
+const M = (n,group,a,b,city,venue,dl,tm,koUTC)=>({n,group,a,b,city,venue,dl,tm,koUTC});
+const MATCHES = [
+  M(1,"A","Mexico","South Africa","Mexico City","Mexico City Stadium","Thu, Jun 11","12:00 PM","2026-06-11T19:00:00Z"),
+  M(2,"A","South Korea","Czechia","Guadalajara","Guadalajara Stadium","Thu, Jun 11","7:00 PM","2026-06-12T02:00:00Z"),
+  M(3,"B","Canada","Bosnia & Herzegovina","Toronto","Toronto Stadium","Fri, Jun 12","12:00 PM","2026-06-12T19:00:00Z"),
+  M(4,"D","United States","Paraguay","Los Angeles","Los Angeles Stadium","Fri, Jun 12","6:00 PM","2026-06-13T01:00:00Z"),
+  M(5,"B","Qatar","Switzerland","San Francisco Bay Area","SF Bay Area Stadium","Sat, Jun 13","12:00 PM","2026-06-13T19:00:00Z"),
+  M(6,"C","Brazil","Morocco","New York","New York/New Jersey Stadium","Sat, Jun 13","3:00 PM","2026-06-13T22:00:00Z"),
+  M(7,"C","Haiti","Scotland","Boston","Boston Stadium","Sat, Jun 13","6:00 PM","2026-06-14T01:00:00Z"),
+  M(8,"D","Australia","Turkey","Vancouver","BC Place Vancouver","Sat, Jun 13","9:00 PM","2026-06-14T04:00:00Z"),
+  M(9,"E","Germany","Curaçao","Houston","Houston Stadium","Sun, Jun 14","10:00 AM","2026-06-14T17:00:00Z"),
+  M(10,"F","Netherlands","Japan","Dallas","Dallas Stadium","Sun, Jun 14","1:00 PM","2026-06-14T20:00:00Z"),
+  M(11,"E","Ivory Coast","Ecuador","Philadelphia","Philadelphia Stadium","Sun, Jun 14","4:00 PM","2026-06-14T23:00:00Z"),
+  M(12,"F","Sweden","Tunisia","Monterrey","Monterrey Stadium","Sun, Jun 14","7:00 PM","2026-06-15T02:00:00Z"),
+  M(13,"H","Spain","Cape Verde","Atlanta","Atlanta Stadium","Mon, Jun 15","9:00 AM","2026-06-15T16:00:00Z"),
+  M(14,"G","Belgium","Egypt","Seattle","Seattle Stadium","Mon, Jun 15","12:00 PM","2026-06-15T19:00:00Z"),
+  M(15,"H","Saudi Arabia","Uruguay","Miami","Miami Stadium","Mon, Jun 15","3:00 PM","2026-06-15T22:00:00Z"),
+  M(16,"G","Iran","New Zealand","Los Angeles","Los Angeles Stadium","Mon, Jun 15","6:00 PM","2026-06-16T01:00:00Z"),
+  M(17,"I","France","Senegal","New York","New York/New Jersey Stadium","Tue, Jun 16","12:00 PM","2026-06-16T19:00:00Z"),
+  M(18,"I","Iraq","Norway","Boston","Boston Stadium","Tue, Jun 16","3:00 PM","2026-06-16T22:00:00Z"),
+  M(19,"J","Argentina","Algeria","Kansas City","Kansas City Stadium","Tue, Jun 16","6:00 PM","2026-06-17T01:00:00Z"),
+  M(20,"J","Austria","Jordan","San Francisco Bay Area","SF Bay Area Stadium","Tue, Jun 16","9:00 PM","2026-06-17T04:00:00Z"),
+  M(21,"K","Portugal","DR Congo","Houston","Houston Stadium","Wed, Jun 17","10:00 AM","2026-06-17T17:00:00Z"),
+  M(22,"L","England","Croatia","Dallas","Dallas Stadium","Wed, Jun 17","1:00 PM","2026-06-17T20:00:00Z"),
+  M(23,"L","Ghana","Panama","Toronto","Toronto Stadium","Wed, Jun 17","4:00 PM","2026-06-17T23:00:00Z"),
+  M(24,"K","Uzbekistan","Colombia","Mexico City","Mexico City Stadium","Wed, Jun 17","7:00 PM","2026-06-18T02:00:00Z"),
+  M(25,"A","Czechia","South Africa","Atlanta","Atlanta Stadium","Thu, Jun 18","9:00 AM","2026-06-18T16:00:00Z"),
+  M(26,"B","Switzerland","Bosnia & Herzegovina","Los Angeles","Los Angeles Stadium","Thu, Jun 18","12:00 PM","2026-06-18T19:00:00Z"),
+  M(27,"B","Canada","Qatar","Vancouver","BC Place Vancouver","Thu, Jun 18","3:00 PM","2026-06-18T22:00:00Z"),
+  M(28,"A","Mexico","South Korea","Guadalajara","Guadalajara Stadium","Thu, Jun 18","6:00 PM","2026-06-19T01:00:00Z"),
+  M(29,"D","United States","Australia","Seattle","Seattle Stadium","Fri, Jun 19","12:00 PM","2026-06-19T19:00:00Z"),
+  M(30,"C","Scotland","Morocco","Boston","Boston Stadium","Fri, Jun 19","3:00 PM","2026-06-19T22:00:00Z"),
+  M(31,"C","Brazil","Haiti","Philadelphia","Philadelphia Stadium","Fri, Jun 19","5:30 PM","2026-06-20T00:30:00Z"),
+  M(32,"D","Turkey","Paraguay","San Francisco Bay Area","SF Bay Area Stadium","Fri, Jun 19","8:00 PM","2026-06-20T03:00:00Z"),
+  M(33,"F","Netherlands","Sweden","Houston","Houston Stadium","Sat, Jun 20","10:00 AM","2026-06-20T17:00:00Z"),
+  M(34,"E","Germany","Ivory Coast","Toronto","Toronto Stadium","Sat, Jun 20","1:00 PM","2026-06-20T20:00:00Z"),
+  M(35,"E","Ecuador","Curaçao","Kansas City","Kansas City Stadium","Sat, Jun 20","5:00 PM","2026-06-21T00:00:00Z"),
+  M(36,"F","Tunisia","Japan","Monterrey","Monterrey Stadium","Sat, Jun 20","9:00 PM","2026-06-21T04:00:00Z"),
+  M(37,"H","Spain","Saudi Arabia","Atlanta","Atlanta Stadium","Sun, Jun 21","9:00 AM","2026-06-21T16:00:00Z"),
+  M(38,"G","Belgium","Iran","Los Angeles","Los Angeles Stadium","Sun, Jun 21","12:00 PM","2026-06-21T19:00:00Z"),
+  M(39,"H","Uruguay","Cape Verde","Miami","Miami Stadium","Sun, Jun 21","3:00 PM","2026-06-21T22:00:00Z"),
+  M(40,"G","New Zealand","Egypt","Vancouver","BC Place Vancouver","Sun, Jun 21","6:00 PM","2026-06-22T01:00:00Z"),
+  M(41,"J","Argentina","Austria","Dallas","Dallas Stadium","Mon, Jun 22","10:00 AM","2026-06-22T17:00:00Z"),
+  M(42,"I","France","Iraq","Philadelphia","Philadelphia Stadium","Mon, Jun 22","2:00 PM","2026-06-22T21:00:00Z"),
+  M(43,"I","Norway","Senegal","New York","New York/New Jersey Stadium","Mon, Jun 22","5:00 PM","2026-06-23T00:00:00Z"),
+  M(44,"J","Jordan","Algeria","San Francisco Bay Area","SF Bay Area Stadium","Mon, Jun 22","8:00 PM","2026-06-23T03:00:00Z"),
+  M(45,"K","Portugal","Uzbekistan","Houston","Houston Stadium","Tue, Jun 23","10:00 AM","2026-06-23T17:00:00Z"),
+  M(46,"L","England","Ghana","Boston","Boston Stadium","Tue, Jun 23","1:00 PM","2026-06-23T20:00:00Z"),
+  M(47,"L","Panama","Croatia","Toronto","Toronto Stadium","Tue, Jun 23","4:00 PM","2026-06-23T23:00:00Z"),
+  M(48,"K","Colombia","DR Congo","Guadalajara","Guadalajara Stadium","Tue, Jun 23","7:00 PM","2026-06-24T02:00:00Z"),
+  M(49,"B","Switzerland","Canada","Vancouver","BC Place Vancouver","Wed, Jun 24","12:00 PM","2026-06-24T19:00:00Z"),
+  M(50,"B","Bosnia & Herzegovina","Qatar","Seattle","Seattle Stadium","Wed, Jun 24","12:00 PM","2026-06-24T19:00:00Z"),
+  M(51,"C","Scotland","Brazil","Miami","Miami Stadium","Wed, Jun 24","3:00 PM","2026-06-24T22:00:00Z"),
+  M(52,"C","Morocco","Haiti","Atlanta","Atlanta Stadium","Wed, Jun 24","3:00 PM","2026-06-24T22:00:00Z"),
+  M(53,"A","Czechia","Mexico","Mexico City","Mexico City Stadium","Wed, Jun 24","6:00 PM","2026-06-25T01:00:00Z"),
+  M(54,"A","South Africa","South Korea","Monterrey","Monterrey Stadium","Wed, Jun 24","6:00 PM","2026-06-25T01:00:00Z"),
+  M(55,"E","Curaçao","Ivory Coast","Philadelphia","Philadelphia Stadium","Thu, Jun 25","1:00 PM","2026-06-25T20:00:00Z"),
+  M(56,"E","Ecuador","Germany","New York","New York/New Jersey Stadium","Thu, Jun 25","1:00 PM","2026-06-25T20:00:00Z"),
+  M(57,"F","Japan","Sweden","Dallas","Dallas Stadium","Thu, Jun 25","4:00 PM","2026-06-25T23:00:00Z"),
+  M(58,"F","Tunisia","Netherlands","Kansas City","Kansas City Stadium","Thu, Jun 25","4:00 PM","2026-06-25T23:00:00Z"),
+  M(59,"D","Turkey","United States","Los Angeles","Los Angeles Stadium","Thu, Jun 25","7:00 PM","2026-06-26T02:00:00Z"),
+  M(60,"D","Paraguay","Australia","San Francisco Bay Area","SF Bay Area Stadium","Thu, Jun 25","7:00 PM","2026-06-26T02:00:00Z"),
+  M(61,"I","Norway","France","Boston","Boston Stadium","Fri, Jun 26","12:00 PM","2026-06-26T19:00:00Z"),
+  M(62,"I","Senegal","Iraq","Toronto","Toronto Stadium","Fri, Jun 26","12:00 PM","2026-06-26T19:00:00Z"),
+  M(63,"H","Cape Verde","Saudi Arabia","Houston","Houston Stadium","Fri, Jun 26","5:00 PM","2026-06-27T00:00:00Z"),
+  M(64,"H","Uruguay","Spain","Guadalajara","Guadalajara Stadium","Fri, Jun 26","5:00 PM","2026-06-27T00:00:00Z"),
+  M(65,"G","Egypt","Iran","Seattle","Seattle Stadium","Fri, Jun 26","8:00 PM","2026-06-27T03:00:00Z"),
+  M(66,"G","New Zealand","Belgium","Vancouver","BC Place Vancouver","Fri, Jun 26","8:00 PM","2026-06-27T03:00:00Z"),
+  M(67,"L","Panama","England","New York","New York/New Jersey Stadium","Sat, Jun 27","2:00 PM","2026-06-27T21:00:00Z"),
+  M(68,"L","Croatia","Ghana","Philadelphia","Philadelphia Stadium","Sat, Jun 27","2:00 PM","2026-06-27T21:00:00Z"),
+  M(69,"K","Colombia","Portugal","Miami","Miami Stadium","Sat, Jun 27","4:30 PM","2026-06-27T23:30:00Z"),
+  M(70,"K","DR Congo","Uzbekistan","Atlanta","Atlanta Stadium","Sat, Jun 27","4:30 PM","2026-06-27T23:30:00Z"),
+  M(71,"J","Algeria","Austria","Kansas City","Kansas City Stadium","Sat, Jun 27","7:00 PM","2026-06-28T02:00:00Z"),
+  M(72,"J","Jordan","Argentina","Dallas","Dallas Stadium","Sat, Jun 27","7:00 PM","2026-06-28T02:00:00Z"),
+];
+
+// Knockout placeholders (display-only in prototype)
+const KO = [
+  [73,"R32","2A","2B","Los Angeles","2026-06-28T19:00:00Z"],
+  [74,"R32","1C","2F","Houston","2026-06-29T17:00:00Z"],
+  [75,"R32","1E","3ABCDF","Boston","2026-06-29T20:30:00Z"],
+  [76,"R32","1F","2C","Monterrey","2026-06-30T01:00:00Z"],
+  [77,"R32","2E","2I","Dallas","2026-06-30T17:00:00Z"],
+  [78,"R32","1I","3CDFGH","New York","2026-06-30T21:00:00Z"],
+  [79,"R32","1A","3CEFHI","Mexico City","2026-07-01T01:00:00Z"],
+  [80,"R32","1L","3EHIJK","Atlanta","2026-07-01T16:00:00Z"],
+  [81,"R32","1G","3AEHIJ","Seattle","2026-07-01T20:00:00Z"],
+  [82,"R32","1D","3BEFIJ","San Francisco Bay Area","2026-07-02T00:00:00Z"],
+  [83,"R32","1H","2J","Los Angeles","2026-07-02T19:00:00Z"],
+  [84,"R32","2K","2L","Toronto","2026-07-02T23:00:00Z"],
+  [85,"R32","1B","3EFGIJ","Vancouver","2026-07-03T03:00:00Z"],
+  [86,"R32","2D","2G","Dallas","2026-07-03T18:00:00Z"],
+  [87,"R32","1J","2H","Miami","2026-07-03T22:00:00Z"],
+  [88,"R32","1K","3DEIJL","Kansas City","2026-07-04T01:30:00Z"],
+  [89,"R16","W73","W75","Houston","2026-07-04T17:00:00Z"],
+  [90,"R16","W74","W77","Philadelphia","2026-07-04T21:00:00Z"],
+  [91,"R16","W76","W78","New York","2026-07-05T20:00:00Z"],
+  [92,"R16","W79","W80","Mexico City","2026-07-06T00:00:00Z"],
+  [93,"R16","W83","W84","Dallas","2026-07-06T19:00:00Z"],
+  [94,"R16","W81","W82","Seattle","2026-07-07T00:00:00Z"],
+  [95,"R16","W86","W88","Atlanta","2026-07-07T16:00:00Z"],
+  [96,"R16","W85","W87","Vancouver","2026-07-07T20:00:00Z"],
+  [97,"QF","W89","W90","Boston","2026-07-09T20:00:00Z"],
+  [98,"QF","W93","W94","Los Angeles","2026-07-10T19:00:00Z"],
+  [99,"QF","W91","W92","Miami","2026-07-11T21:00:00Z"],
+  [100,"QF","W95","W96","Kansas City","2026-07-12T01:00:00Z"],
+  [101,"SF","W97","W98","Dallas","2026-07-14T19:00:00Z"],
+  [102,"SF","W99","W100","Atlanta","2026-07-15T19:00:00Z"],
+  [103,"3rd Place","RU101","RU102","Miami","2026-07-18T21:00:00Z"],
+  [104,"Final","W101","W102","New York","2026-07-19T19:00:00Z"],
+];
+function slotLabel(code){
+  if(/^\d[A-L]$/.test(code)) return (code[0]==="1"?"Winner ":"Runner-up ")+code[1];
+  if(/^3[A-L]+$/.test(code)) return "3rd: "+code.slice(1).split("").join("/");
+  if(/^W\d+$/.test(code)) return "Winner M"+code.slice(1);
+  if(/^RU\d+$/.test(code)) return "Loser M"+code.slice(2);
+  return code;
+}
+
+/* ---------- Seed members & wagers ---------- */
+// Member names live in the private Google Sheet, fetched at runtime — not stored here.
+
+// Actual results the Refresh button will "fetch" (matches already played)
+
+
+/* ---------- Storage layer (shared if available, else in-memory) ---------- */
+let STATE=null, acting=null;
+let TZSTATE="PDT", SORTBY="pts";
+let dayState={};   // dateLabel -> "open" | "collapsed" (sticky within session)
+const TZS={ PDT:{label:"PDT", off:-420}, IST:{label:"IST", off:330} }; // minutes from UTC
+const _DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const _MONS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function disp(koUTC){
+  const d=new Date(new Date(koUTC).getTime()+TZS[TZSTATE].off*60000);
+  let h=d.getUTCHours(); const m=d.getUTCMinutes();
+  const ap=h>=12?"PM":"AM"; let h12=h%12; if(h12===0) h12=12;
+  return { date:`${_DAYS[d.getUTCDay()]}, ${_MONS[d.getUTCMonth()]} ${d.getUTCDate()}`,
+           time:`${h12}:${String(m).padStart(2,"0")} ${ap}`, tz:TZS[TZSTATE].label };
+}
+
+/* ---------- Helpers ---------- */
+const $=s=>document.querySelector(s);
+const elFor=n=>MATCHES.find(m=>m.n===n);
+const memberName=id=>{const m=STATE.members.find(x=>x.id===id);return m?m.name:"?";};
+function isLocked(m){ return Date.now() >= new Date(m.koUTC).getTime(); }
+function matchResult(n){ return STATE.results[n]||null; }
+function sgn(x){ return x>0?1:(x<0?-1:0); }
+function scoreWager(p, r){
+  if(!r) return null;
+  // PDF rule 3, verbatim: 3 pts for the outcome OR the scoreline; for the scoreline, 1-2 and 2-1 count the same; 6 for both.
+  const outcome = sgn(p.a-p.b)===sgn(r.a-r.b);
+  const line = (p.a===r.a && p.b===r.b) || (p.a===r.b && p.b===r.a);
+  return (outcome?3:0)+(line?3:0);
+}
+function fmtClock(ts){
+  const d=new Date(ts);
+  return d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+}
+function toast(msg, duration=2200){
+  const t=$("#toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"), duration);
+}
+
+/* ---------- Standings ---------- */
+function standings(){
+  const rows = STATE.members.map(m=>({id:m.id,name:m.name,pts:0,w:0,l:0,pending:0,placed:0}));
+  const byId=Object.fromEntries(rows.map(r=>[r.id,r]));
+  for(const n in STATE.wagers){
+    const r=matchResult(+n);
+    for(const owner in STATE.wagers[n]){
+      const row=byId[owner]; if(!row) continue;
+      row.placed++;
+      const p=STATE.wagers[n][owner];
+      const pts=scoreWager(p,r);
+      if(pts===null){ row.pending++; }
+      else { row.pts+=pts; if(pts>0) row.w++; else row.l++; }
+    }
+  }
+  rows.sort((a,b)=> b.pts-a.pts || b.w-a.w || a.name.localeCompare(b.name));
+  return rows;
+}
+
+/* ---------- Renders ---------- */
+function renderActing(){
+  const el=$("#actingName");
+  if(el) el.textContent = memberName(acting);
+}
+function renderLeaderboard(){
+  const ranked=standings();              // always ranked by points first
+  ranked.forEach((r,i)=>r.rank=i+1);     // rank reflects standing, not display order
+  let rows=ranked.slice();
+  if(SORTBY==="name") rows.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(SORTBY==="wl") rows.sort((a,b)=> b.w-a.w || a.l-b.l || a.name.localeCompare(b.name));
+  // SORTBY==="pts": keep points order
+  const arr = k => SORTBY===k ? ' <span class="sarr">▾</span>' : '';
+  const html = `
+    <div class="lt-head"><div>#</div><div class="sorth" data-sort="name">Player${arr("name")}</div><div class="sorth" data-sort="wl" style="text-align:right">W–L${arr("wl")}</div><div class="sorth" data-sort="pts" style="text-align:right">Pts${arr("pts")}</div></div>
+    ${rows.map(r=>`
+      <div class="lt-row" data-player="${r.id}">
+        <div class="rank ${r.rank<=3?'r'+r.rank:''}">${r.rank}</div>
+        <div class="pname">${r.name}
+          <span class="pmeta">${r.placed} bet${r.placed!==1?'s':''}</span></div>
+        <div class="wl"><b>${r.w}</b>–<s>${r.l}</s>${r.pending?`<span class="pend">${r.pending} pending</span>`:''}</div>
+        <div class="pts ${r.pts===0?'zero':''}">${r.pts}</div>
+      </div>`).join("")}
+  `;
+  $("#leaderboard").innerHTML=html;
+  document.querySelectorAll(".sorth[data-sort]").forEach(el=>el.onclick=()=>{ SORTBY=el.dataset.sort; renderLeaderboard(); });
+  document.querySelectorAll("[data-player]").forEach(el=>el.onclick=()=>openPlayer(el.dataset.player));
+}
+function statusOf(m){
+  if(matchResult(m.n)) return "played";
+  return isLocked(m)?"locked":"open";
+}
+const RULES_URL = ""; // production: set to the hosted PDF link; if empty the in-app rules page opens
+function buildRulesHTML(){
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>L'84 FIFA 2026 — Wager Rules</title>
+  <style>body{font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:720px;margin:0 auto;padding:28px 22px;color:#16181d;background:#fff}
+  h1{font-size:22px;margin:0 0 2px}.sub{color:#888;letter-spacing:.12em;text-transform:uppercase;font-size:11px;font-weight:700;margin-bottom:22px}
+  ol{padding-left:22px}li{margin:0 0 12px}b{color:#000}
+  @media(prefers-color-scheme:dark){body{background:#15171c;color:#ECEEF2}b{color:#fff}.sub{color:#969DA9}}</style></head>
+  <body><h1>L'84 FIFA 2026 — Betting details</h1><div class="sub">We are 26 · not 58</div><ol>
+  <li>You can predict the outcome of any number of games you choose. Prediction for each game costs <b>INR 100</b>. There are 104 games in total; predicting every game costs INR 10,400.</li>
+  <li>Prediction should be for the score. For A vs B, if you predict B to win 2–1 your prediction is <b>1‑2</b>; for A to win by the same score it's <b>2‑1</b>. Team A and B are as shown in the FIFA fixture list posted in the group.</li>
+  <li>You get <b>3 points</b> for predicting either the outcome or the score correctly. For score prediction, <b>1‑2 or 2‑1 are treated as the same</b>. If you predict both outcome and score correctly you get <b>6 points</b>.</li>
+  <li>For games from the Round of 32 onwards a draw cannot be the outcome, as one team must progress. The predicted score should also include goals scored in a penalty shootout where applicable.</li>
+  <li>All games and predictions are captured on a spreadsheet and updated daily.</li>
+  <li>You can post your predictions in the group or PM the organiser. A prediction is valid only if made <b>before kickoff</b>.</li>
+  <li>You may also predict one team to win the World Cup, before the Round of 32 starts. Predicted winner wins the Cup: <b>24</b>; reaches (max) the final: <b>16</b>; semi: <b>12</b>; quarter-final: <b>8</b>; pre-quarter: <b>4</b>. Entry fee INR 500.</li>
+  <li>You may also predict any 3 players for the Golden Boot. A pick finishing top scorer: <b>20</b>; 2nd: <b>16</b>; 3rd: <b>12</b> — up to 48 if all three finish in the top three. Before the Round of 32. Entry fee INR 500.</li>
+  <li>Individual points are totalled at the end. Top scorer takes <b>50%</b> of the pool, second <b>30%</b>, third <b>20%</b>.</li>
+  <li>All monies are collected as a single amount at the end of the tournament, paid into the L84 bank maintained by Anil P.</li>
+  </ol></body></html>`;
+}
+function openRules(){
+  if(RULES_URL){ window.open(RULES_URL,"_blank","noopener"); return; }
+  try{
+    const blob=new Blob([buildRulesHTML()],{type:"text/html"});
+    const w=window.open(URL.createObjectURL(blob),"_blank","noopener");
+    if(!w) toast("Allow pop-ups to view the rules");
+  }catch(e){ toast("Couldn't open rules"); }
+}
+/* ----- knockout matchup resolution (best-effort; full bracket incl. best-third in hosted build) ----- */
+function groupTable(letter){
+  const t={};
+  MATCHES.filter(m=>m.group===letter).forEach(m=>{
+    t[m.a]=t[m.a]||{team:m.a,pts:0,gf:0,ga:0,played:0};
+    t[m.b]=t[m.b]||{team:m.b,pts:0,gf:0,ga:0,played:0};
+    const r=matchResult(m.n); if(!r) return;
+    const A=t[m.a],B=t[m.b]; A.played++;B.played++; A.gf+=r.a;A.ga+=r.b;B.gf+=r.b;B.ga+=r.a;
+    if(r.a>r.b)A.pts+=3; else if(r.a<r.b)B.pts+=3; else {A.pts++;B.pts++;}
+  });
+  const arr=Object.values(t); arr.forEach(x=>x.gd=x.gf-x.ga);
+  arr.sort((x,y)=> y.pts-x.pts || y.gd-x.gd || y.gf-x.gf || x.team.localeCompare(y.team));
+  return {arr, complete: arr.length===4 && arr.every(x=>x.played===3)};
+}
+function koMatchById(n){ return KO.find(k=>k[0]===n); }
+function koTeams(n){ const k=koMatchById(n); return k?[resolveSlot(k[2]),resolveSlot(k[3])]:[null,null]; }
+function koWinner(n){ const r=matchResult(n); if(!r) return null; const [a,b]=koTeams(n); if(!a||!b) return null; return r.a>=r.b?a:b; }
+function koLoser(n){ const r=matchResult(n); if(!r) return null; const [a,b]=koTeams(n); if(!a||!b) return null; return r.a>=r.b?b:a; }
+function resolveSlot(code){
+  let m=code.match(/^([12])([A-L])$/); if(m){ const gt=groupTable(m[2]); return gt.complete?gt.arr[m[1]==="1"?0:1].team:null; }
+  m=code.match(/^W(\d+)$/); if(m) return koWinner(+m[1]);
+  m=code.match(/^RU(\d+)$/); if(m) return koLoser(+m[1]);
+  return null; // 3XXXX best-third resolved in hosted build
+}
+function matchCardHTML(m, dd, rec){
+  const st=statusOf(m), r=matchResult(m.n);
+  const wc=STATE.wagers[m.n]?Object.keys(STATE.wagers[m.n]).length:0;
+  const chip = st==="played"?'<span class="chip played">Full-time</span>'
+             : st==="open"?'<span class="chip open">Open</span>'
+             : '<span class="chip locked">Locked</span>';
+  const mid = r?`<span class="score">${r.a}–${r.b}</span>`:`<span class="vs">v</span>`;
+  const wgs = STATE.wagers[m.n]||{};
+  const owners = Object.keys(wgs);
+  const peek = `<div class="peek">${
+    owners.length ? `<div class="pk-head"><div>Player · record</div><div>Predicted</div><div>W/L</div><div>Pts</div></div>`+owners.map(oid=>{
+      const w=wgs[oid]; const pp=scoreWager(w,r);
+      const cls = pp===null?'pend':(pp>0?'win':'loss');
+      const wl = pp===null?'–':(pp>0?'W':'L');
+      const ptTxt = pp===null?'·':pp;
+      const rc = rec[oid]||{w:0,l:0};
+      const extra = (w.by!==oid?` · by ${memberName(w.by)}`:'')+(w.backfill?' · backfill':'');
+      return `<div class="pk-row">
+        <div class="who"><div class="nm">${memberName(oid)}</div><div class="sub2">record <span class="recw">${rc.w}</span>–<span class="recl">${rc.l}</span>${extra}</div></div>
+        <div class="pkk">${w.a}–${w.b}</div>
+        <div class="wlc ${cls}">${wl}</div>
+        <div class="pp ${cls}">${ptTxt}</div>
+      </div>`;
+    }).join('') : `<div class="pk-empty">No wagers yet — be the first.</div>`
+  }<button class="pk-cta" data-open="${m.n}">${st==='open'?'Enter a wager':'View match'} →</button></div>`;
+  return `<div class="match expandable status-${st}" data-match="${m.n}">
+    <div class="m-top">${chip}<span class="m-meta">${dd.time} ${dd.tz} · Grp ${m.group}</span></div>
+    <div class="m-teams">
+      <div class="t-name home">${m.a}</div>${mid}<div class="t-name away">${m.b}</div>
+    </div>
+    <div class="m-foot">${m.city}<span class="dot"></span>${wc?`<span class="wcount">${wc} wager${wc!==1?'s':''}</span>`:'<span style="color:var(--faint)">No wagers yet</span>'}<span class="caret">▾</span></div>
+    ${peek}
+  </div>`;
+}
+function koCardHTML(k, dd){
+  const ta=resolveSlot(k[2]), tb=resolveSlot(k[3]); const known=ta&&tb;
+  const r=matchResult(k[0]);
+  const mid=(r&&known)?`<span class="score">${r.a}–${r.b}</span>`:`<span class="vs">v</span>`;
+  const chip = known ? '<span class="chip locked">Set</span>' : `<span class="chip ph">${k[1]}</span>`;
+  return `<div class="match placeholder">
+    <div class="m-top">${chip}<span class="m-meta">${dd.time} ${dd.tz} · ${k[1]} · M${k[0]}</span></div>
+    <div class="m-teams">
+      <div class="t-name home">${ta||slotLabel(k[2])}</div>${mid}<div class="t-name away">${tb||slotLabel(k[3])}</div>
+    </div>
+    <div class="m-foot">${k[4]}<span class="dot"></span><span style="color:var(--faint)">${known?'Matchup set':'Opens when teams are decided'}</span></div>
+  </div>`;
+}
+function renderSchedule(){
+  const fl=$("#freshline");
+  if(fl){
+    if(STATE.lastRefresh){ const d=disp(STATE.lastRefresh); fl.className="freshline"; fl.textContent=`Scores last refreshed ${d.date} · ${d.time} ${d.tz}`; }
+    else { fl.className="freshline stale"; fl.textContent="Scores not refreshed yet — tap ↻ Scores above"; }
+  }
+  const rec={}; standings().forEach(s=>rec[s.id]={w:s.w,l:s.l});
+  const now=Date.now();
+  const rows=[];
+  MATCHES.forEach(m=>rows.push({kind:"g",m,ko:m.koUTC}));
+  KO.forEach(k=>rows.push({kind:"k",k,ko:k[5]}));
+  const groups=[];
+  rows.forEach(row=>{
+    const dd=disp(row.ko); row.dd=dd;
+    let g=groups[groups.length-1];
+    if(!g || g.label!==dd.date){ g={label:dd.date, rows:[], key:null}; groups.push(g); }
+    g.rows.push(row);
+  });
+  // assign TZ-invariant key = first match number in the group
+  groups.forEach(g=>{
+    const r=g.rows[0]; g.key = r.kind==="g" ? "d"+r.m.n : "dk"+r.k[0];
+    g.started = new Date(g.rows[0].ko).getTime() <= now;
+    if(dayState[g.key]===undefined) dayState[g.key] = g.started ? "open" : "collapsed";
+    const isKO = g.rows[0].kind==="k";
+    const tags=[]; g.rows.forEach(row=>{ const t=row.kind==="g"?row.m.group:row.k[1]; if(!tags.includes(t)) tags.push(t); });
+    g.summary = isKO ? tags.join(" · ") : "Grp "+tags.join("·");
+    const allDone = g.rows.every(row=>!!matchResult(row.kind==="g"?row.m.n:row.k[0]));
+    const anyWagers = g.rows.some(row=>{
+      const n = row.kind==="g" ? row.m.n : row.k[0];
+      return Object.keys(STATE.wagers[n]||{}).length > 0;
+    });
+    g.era = allDone ? "past" : g.started ? "today" : anyWagers ? "future" : "future-empty";
+  });
+  const cab=$("#collapseAllBtn");
+  if(cab) cab.textContent = groups.some(g=>dayState[g.key]!=="collapsed") ? "Collapse all" : "Expand all";
+  const html = groups.map(g=>{
+    const collapsed = dayState[g.key]==="collapsed";
+    const body = g.rows.map(row=> row.kind==="g" ? matchCardHTML(row.m,row.dd,rec) : koCardHTML(row.k,row.dd)).join("");
+    return `<div class="daygroup era-${g.era}">
+      <button class="dayhdr" data-day="${g.key}">
+        <span class="d">${g.label}</span><span class="line"></span>
+        <span class="daysummary">${g.summary}</span>
+        <span class="daycaret ${collapsed?'':'open'}">▾</span>
+      </button>
+      <div class="daybody ${collapsed?'collapsed':''}">${body}</div>
+    </div>`;
+  }).join("");
+  $("#schedule").innerHTML=html;
+  document.querySelectorAll(".dayhdr[data-day]").forEach(b=>b.onclick=()=>{
+    const body=b.parentElement.querySelector(".daybody");
+    const nowCollapsed=body.classList.toggle("collapsed");
+    dayState[b.dataset.day]= nowCollapsed?"collapsed":"open";
+    b.querySelector(".daycaret").classList.toggle("open", !nowCollapsed);
+    // update button label
+    const anyOpen=Object.values(dayState).some(v=>v!=="collapsed");
+    const cab2=$("#collapseAllBtn"); if(cab2) cab2.textContent=anyOpen?"Collapse all":"Expand all";
+  });
+  document.querySelectorAll(".match.expandable").forEach(el=>{
+    el.onclick=(e)=>{ if(e.target.closest("[data-open]")) return; el.classList.toggle("open"); };
+  });
+  document.querySelectorAll("[data-open]").forEach(b=>b.onclick=(e)=>{e.stopPropagation(); openMatch(+b.dataset.open);});
+}
+function renderLog(){
+  if(!STATE.log.length){ $("#logfeed").innerHTML='<div class="empty">No activity yet.</div>'; return; }
+  const html = STATE.log.map(e=>{
+    if(e.type==="member"){
+      return `<div class="logitem member"><div class="tl"><i></i></div><div class="logbody">
+        <div class="logtext"><b>${memberName(e.by)}</b> added <b>${e.name}</b> to the pool</div>
+        <div class="logtime">${fmtClock(e.t)}</div></div></div>`;
+    }
+    if(e.type==="result"){
+      const m=elFor(e.mN);
+      return `<div class="logitem result"><div class="tl"><i></i></div><div class="logbody">
+        <div class="logtext"><b>${memberName(e.by)}</b> refreshed result · ${m.a} <span class="sl">${e.a}–${e.b}</span> ${m.b}</div>
+        <div class="logtime">${fmtClock(e.t)} · M${e.mN}</div></div></div>`;
+    }
+    const m=elFor(e.mN);
+    const proxy = e.by!==e.owner ? ` for <b>${memberName(e.owner)}</b>` : "";
+    const verb = e.type==="edit"?"updated":"entered";
+    const oldtxt = e.type==="edit"&&e.oa!=null?` <span style="color:var(--faint)">(was ${e.oa}–${e.ob})</span>`:"";
+    return `<div class="logitem ${e.type}"><div class="tl"><i></i></div><div class="logbody">
+      <div class="logtext"><b>${memberName(e.by)}</b> ${verb}${proxy} · ${m.a} <span class="sl">${e.a}–${e.b}</span> ${m.b}${oldtxt}${e.backfill?'<span class="bf">backfill</span>':''}</div>
+      <div class="logtime">${fmtClock(e.t)} · M${e.mN}</div></div></div>`;
+  }).join("");
+  $("#logfeed").innerHTML=html;
+}
+function renderAll(){ renderLeaderboard(); renderSchedule(); renderLog(); }
+
+/* ---------- Sheet (modal) ---------- */
+function openSheet(html){ $("#sheet").innerHTML=`<div class="grab"></div><button class="closebtn" onclick="closeSheet()">✕</button>`+html; $("#sheet").classList.add("show"); $("#scrim").classList.add("show"); $("#sheet").scrollTop=0; }
+function closeSheet(){ $("#sheet").classList.remove("show"); $("#scrim").classList.remove("show"); }
+$("#scrim").onclick=closeSheet;
+
+/* ---------- Match sheet ---------- */
+function openMatch(n){
+  const m=elFor(n); const r=matchResult(n); const locked=isLocked(m);
+  const wgs = STATE.wagers[n]||{};
+  const owners = Object.keys(wgs);
+
+  const dd=disp(m.koUTC);
+  let head = `<h2>${m.a} <span style="color:var(--faint)">v</span> ${m.b}</h2>
+    <div class="sub">${dd.date} · ${dd.time} ${dd.tz} · ${m.venue}, ${m.city} · Group ${m.group}</div>`;
+
+  let scoreBlk = r
+    ? `<div class="scorebig"><div class="tn h">${m.a}</div><div class="sc">${r.a}–${r.b}<small>Full-time</small></div><div class="tn">${m.b}</div></div>`
+    : (locked
+        ? `<div class="lockbox">⏱ <b>Wagers locked</b> — this match has kicked off. No result recorded yet; tap <b>↻ Scores</b> to pull it.</div>`
+        : ``);
+
+  // entry form
+  let form="";
+  const ADMINS = ["Venu Nair","Augustine Chandy"];
+  const isAdmin = ADMINS.includes(memberName(acting));
+  const canNormal = !locked;
+
+  // build ownerSel options: acting first, then separator, then rest A-Z
+  function ownerOpts(){
+    const actingMember = STATE.members.find(m=>m.id===acting);
+    const rest = [...STATE.members].filter(m=>m.id!==acting).sort((a,b)=>a.name.localeCompare(b.name));
+    return `<option value="${actingMember.id}">${actingMember.name}</option>`
+      + `<option disabled>──────────────</option>`
+      + rest.map(mm=>`<option value="${mm.id}">${mm.name}</option>`).join("");
+  }
+
+  if(canNormal){
+    const myW = wgs[acting]; // existing wager for the logged-in user, if any
+    const preA = myW ? myW.a : '';
+    const preB = myW ? myW.b : '';
+    const btnLabel = myW ? 'Update wager' : 'Save wager';
+    form = `<div class="formcard">
+      ${myW?`<div class="note" style="margin-bottom:10px">You already have a wager on this match (<b>${myW.a}–${myW.b}</b>). Change it below — the latest before kickoff counts.</div>`:''}
+      <div class="formrow">
+        <div class="fld"><label>Whose wager</label>
+          <select id="ownerSel">${ownerOpts()}</select></div>
+        <div class="fld"><label>Predicted score</label>
+          <div class="scoreinputs">
+            <div><div class="teamcap">${m.a}</div><input id="scA" type="number" min="0" max="20" inputmode="numeric" placeholder="?" value="${preA}"></div>
+            <div class="mid">–</div>
+            <div><div class="teamcap">${m.b}</div><input id="scB" type="number" min="0" max="20" inputmode="numeric" placeholder="?" value="${preB}"></div>
+          </div></div>
+      </div>
+      <button class="btn" id="saveWager">${btnLabel}</button>
+    </div>`;
+  } else if(isAdmin){
+    form = `
+      <div id="bfWrap" style="display:none">
+        <div class="formrow">
+          <div class="fld"><label>Whose wager (backfill)</label>
+            <select id="ownerSel">${ownerOpts()}</select></div>
+          <div class="fld"><label>Predicted score</label>
+            <div class="scoreinputs">
+              <div><div class="teamcap">${m.a}</div><input id="scA" type="number" min="0" max="20" inputmode="numeric" placeholder="?"></div>
+              <div class="mid">–</div>
+              <div><div class="teamcap">${m.b}</div><input id="scB" type="number" min="0" max="20" inputmode="numeric" placeholder="?"></div>
+            </div></div>
+        </div>
+        <button class="btn" id="saveWager">Save backfill wager</button>
+        <div class="note" style="margin-top:10px">Backfilled wagers are flagged in the activity log. Only for picks genuinely made before kickoff.</div>
+      </div>
+      <button class="btn ghost" id="bfToggle">+ Backfill a wager (admin only)</button>`;
+  }
+
+  // existing wagers list
+  let list = `<div class="wlist">
+    <div class="lhdr"><span>Wagers placed</span><span>${owners.length}</span></div>
+    ${owners.length?`<div class="whdr"><span>Player</span><span>Predicted</span></div>`:''}`;
+  if(!owners.length){ list+=`<div class="empty" style="padding:14px">No wagers yet. Be the first.</div>`; }
+  else {
+    list += owners.map(oid=>{
+      const w=wgs[oid];
+      const extra=(w.by!==oid?` · proxy: ${memberName(w.by)}`:'')+(w.backfill?' · backfill':'');
+      const mine = oid===acting?' mine':'';
+      return `<div class="wrow${mine}">
+        <div class="nm">${memberName(oid)}${extra?`<span class="by"> ${extra}</span>`:''}</div>
+        <div class="pk">${w.a}–${w.b}</div>
+      </div>`;
+    }).join("");
+  }
+  list+=`</div><div style="height:24px"></div>`;
+
+  openSheet(head+scoreBlk+form+list);
+
+  // wire
+  const sv=$("#saveWager");
+  if(sv){
+    const ownerSel=$("#ownerSel"); if(ownerSel) ownerSel.value=acting;
+    sv.onclick=()=>saveWager(n, locked);
+  }
+  // when owner changes, pre-fill that person's existing wager (if any) and relabel button
+  const osel=$("#ownerSel");
+  if(osel){
+    osel.onchange=()=>{
+      const ow=(STATE.wagers[n]||{})[osel.value];
+      const A=$("#scA"), B=$("#scB"), btn=$("#saveWager");
+      if(A) A.value = ow ? ow.a : '';
+      if(B) B.value = ow ? ow.b : '';
+      if(btn) btn.textContent = ow ? 'Update wager' : 'Save wager';
+    };
+  }
+  const bft=$("#bfToggle");
+  if(bft) bft.onclick=()=>{ $("#bfWrap").style.display="block"; bft.style.display="none"; const os=$("#ownerSel"); if(os) os.value=acting; const s=$("#saveWager"); if(s) s.onclick=()=>saveWager(n, locked); };
+}
+function saveWager(n, locked){
+  const ownerId=$("#ownerSel").value;
+  const a=parseInt($("#scA").value,10), b=parseInt($("#scB").value,10);
+  if(isNaN(a)||isNaN(b)||a<0||b<0){ toast("Enter both scores"); return; }
+  const isProxy = ownerId!==acting;
+  toast("Saving…");
+  serverSaveWager(n, ownerId, a, b).then(r => {
+    if(!r.ok){ toast("Error: " + (r.error||"unknown")); return; }
+    // merge server wagers into STATE
+    if(r.wagers) STATE.wagers = r.wagers;
+    toast(isProxy ? `Saved for ${memberName(ownerId)} — logged` : "Wager saved");
+    renderAll(); openMatch(n);
+  });
+}
+
+/* ---------- Player sheet ---------- */
+function openPlayer(pid){
+  const rows=[];
+  let pts=0,w=0,l=0,pend=0;
+  for(const n in STATE.wagers){
+    const wg=STATE.wagers[n][pid]; if(!wg) continue;
+    const m=elFor(+n); const r=matchResult(+n); const p=scoreWager(wg,r);
+    if(p===null) pend++; else { pts+=p; if(p>0) w++; else l++; }
+    rows.push({n:+n,m,wg,r,p});
+  }
+  rows.sort((x,y)=>x.n-y.n);
+  const name=memberName(pid);
+  let body=`<h2>${name}</h2><div class="sub">Match-by-match record</div>
+    <div class="ph-summary">
+      <div class="stat"><div class="v" style="color:var(--green)">${pts}</div><div class="l">Points</div></div>
+      <div class="stat"><div class="v">${w}<span style="color:var(--faint)">–</span>${l}</div><div class="l">Win–Loss</div></div>
+      <div class="stat"><div class="v" style="color:var(--amber)">${pend}</div><div class="l">Pending</div></div>
+    </div>`;
+  if(!rows.length){ body+=`<div class="empty">No wagers placed yet.</div>`; }
+  else {
+    body+=rows.map(r=>{
+      const resTxt = r.r?`${r.r.a}–${r.r.b}`:"—";
+      const cls = r.p===null?"pend":(r.p>0?"win":"loss");
+      const ptTxt = r.p===null?"·":(r.p+"");
+      return `<div class="ph-row">
+        <div class="mt"><div class="a">${r.m.a} v ${r.m.b}</div><div class="b">${disp(r.m.koUTC).date} · result ${resTxt}</div></div>
+        <div class="pick">${r.wg.a}–${r.wg.b}<small>pick</small></div>
+        <div class="pp ${cls}">${ptTxt}</div>
+      </div>`;
+    }).join("");
+  }
+  openSheet(body + `<div style="height:24px"></div>`);
+}
+
+/* ---------- Refresh scores ---------- */
+function refreshScores(){
+  toast("Fetching live scores…");
+  serverRefreshScores().then(r => {
+    if(!r.ok){ toast("Score fetch failed: " + (r.error||"unknown")); return; }
+    STATE.results = Object.fromEntries(
+      Object.entries(r.results).map(([k,v]) => [+k, v])
+    );
+    STATE.lastRefresh = Date.now();
+    renderAll(); toast(r.fromCache ? "Scores refreshed (cached)" : "Live scores updated ✓");
+  });
+}
+
+/* ---------- Add member ---------- */
+function addMember(){
+  openSheet(`<h2>Add member</h2><div class="sub">Anyone can add a player. The addition is logged.</div>
+    <div class="fld"><label>Name</label><input id="newName" type="text" placeholder="Full name"></div>
+    <div style="height:12px"></div>
+    <button class="btn" id="doAdd">Add to pool</button>`);
+  $("#newName").focus();
+  $("#doAdd").onclick=()=>{
+    const nm=$("#newName").value.trim();
+    if(!nm){ toast("Enter a name"); return; }
+    if(STATE.members.some(m=>m.name.toLowerCase()===nm.toLowerCase())){ toast("That name already exists"); return; }
+    const id="m"+Date.now();
+    STATE.members.push({id,name:nm});
+    STATE.log.unshift({t:Date.now(),type:"member",name:nm,by:acting});
+    persist(); renderActing(); renderAll(); closeSheet(); toast(`Added ${nm}`);
+  };
+}
+
+/* ---------- Export ---------- */
+function exportCSV(){
+  const lines=[["Match #","Date (PDT)","Group","Home","Away","Owner","Pick","Final","Points","Entered by","Backfill"].join(",")];
+  for(const n in STATE.wagers){
+    const m=elFor(+n); const r=matchResult(+n);
+    for(const oid in STATE.wagers[n]){
+      const w=STATE.wagers[n][oid]; const p=scoreWager(w,r); const dd=disp(m.koUTC);
+      lines.push([m.n,`"${dd.date} ${dd.time} ${dd.tz}"`,m.group,`"${m.a}"`,`"${m.b}"`,`"${memberName(oid)}"`,
+        `${w.a}-${w.b}`, r?`${r.a}-${r.b}`:"", p===null?"":p, `"${memberName(w.by)}"`, w.backfill?"yes":""].join(","));
+    }
+  }
+  const csv=lines.join("\n");
+  openSheet(`<h2>Export</h2><div class="sub">All wagers, scores and points as CSV — copy, or download. In the hosted version this is your live Google Sheet.</div>
+    <a id="dl" class="btn" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">Download CSV</a>
+    <textarea class="exp" readonly>${csv.replace(/</g,"&lt;")}</textarea>`);
+  try{
+    const blob=new Blob([csv],{type:"text/csv"});
+    const url=URL.createObjectURL(blob);
+    const a=$("#dl"); a.href=url; a.download="l84-fifa-2026-wagers.csv";
+  }catch(e){ const a=$("#dl"); if(a) a.style.display="none"; }
+}
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  $("#view-"+t.dataset.tab).classList.add("active");
+});
+$("#refreshBtn").onclick=refreshScores;
+$("#exportBtn").onclick=exportCSV;
+$("#addMemberBtn").onclick=addMember;
+/* ---------- Identity screen ---------- */
+function showIdentityScreen(canCancel){
+  const screen=$("#idScreen");
+  const list=$("#idList");
+  screen.style.display="flex";
+  list.innerHTML=[...STATE.members].sort((a,b)=>a.name.localeCompare(b.name)).map(m=>`<button class="idname" data-mid="${m.id}">${m.name}</button>`).join("")
+    + `<button id="idAddBtn">+ Add your name</button>`;
+  list.querySelectorAll(".idname").forEach(btn=>btn.onclick=async()=>{
+    const name = btn.textContent;
+    toast("Setting identity…");
+    const r = await serverClaimIdentity(name);
+    if(!r.ok){ 
+      toast("⚠ " + (r.error||"Server error — try again"), 5000); 
+      console.error("claimIdentity failed:", r);
+      return; 
+    }
+    TOKEN = r.token;
+    acting = r.id;
+    Session.set("l84_token", TOKEN);
+    screen.style.display="none";
+    renderActing(); renderAll();
+  });
+  $("#idAddBtn").onclick=()=>{
+    // replace button with inline input — no prompt() needed (blocked on iOS Safari)
+    $("#idAddBtn").outerHTML=`<div id="idAddWrap" style="grid-column:1/-1;display:flex;gap:8px;margin-top:4px">
+      <input id="idNameInput" type="text" placeholder="Your full name" autocomplete="name"
+        style="flex:1;padding:12px 10px;border-radius:10px;border:1.5px solid var(--blue);
+        background:var(--ink);color:var(--paper);font-size:14px;font-family:var(--ui);font-weight:600">
+      <button id="idNameSave" style="padding:12px 16px;border-radius:10px;background:var(--blue);
+        border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--ui)">Save</button>
+    </div>`;
+    const inp=$("#idNameInput"); inp.focus();
+    async function saveNewName(){
+      const nm=inp.value.trim();
+      if(!nm){ inp.style.borderColor="var(--red)"; return; }
+      toast("Adding member…");
+      const r = await api("addMember", { token: TOKEN||"", name: nm });
+      if(!r.ok){ toast("Error: " + r.error, 5000); return; }
+      STATE.members = (r.members||[]).map(m=>({id:m.id,name:m.name}));
+      TOKEN = r.token;
+      acting = STATE.members.find(m=>m.name===nm)?.id;
+      Session.set("l84_token", TOKEN);
+      screen.style.display="none";
+      renderActing(); renderAll();
+    }
+    $("#idNameSave").onclick=saveNewName;
+    inp.onkeydown=e=>{ if(e.key==="Enter") saveNewName(); };
+  };
+  const cancelBtn=$("#idCancelBtn");
+  const closeBtn=$("#idCloseBtn");
+  const dismiss=()=>{ screen.style.display="none"; };
+  if(closeBtn){ closeBtn.style.display = canCancel ? "block" : "none"; closeBtn.onclick=dismiss; }
+  if(cancelBtn){ cancelBtn.style.display = canCancel ? "block" : "none"; cancelBtn.onclick=dismiss; }
+}
+$("#actingReset").onclick=async()=>{
+  TOKEN = null;
+  acting = null;
+  Session.del("l84_token");
+  showIdentityScreen(true);
+};
+document.querySelectorAll("[data-tz]").forEach(b=>b.onclick=()=>{
+  TZSTATE=b.dataset.tz;
+  document.querySelectorAll("[data-tz]").forEach(x=>x.classList.toggle("active", x===b));
+  Session.set('l84_tz', TZSTATE);
+  renderSchedule();
+});
+$("#collapseAllBtn").onclick=()=>{
+  const anyOpen=Object.values(dayState).some(v=>v!=="collapsed");
+  Object.keys(dayState).forEach(k=>dayState[k]= anyOpen?"collapsed":"open");
+  renderSchedule();
+};
+$("#rulesBtn").onclick=openRules;
+
+window.closeSheet=closeSheet;
+
+/* ================================================================
+   Backend bridge — fetch() to Google Apps Script JSON API
+   ================================================================ */
+
+// The deployed Apps Script web app URL (the /exec endpoint):
+const API_URL = "https://script.google.com/macros/s/AKfycbzwWUZbpzBGxPjlw1sA1XmlB8uQSNswvPhO_Pe-teXVKWTJk192_oPZNF54z89o3tE/exec";
+
+let TOKEN = null; // device identity token, stored in localStorage
+
+const Session = {
+  get: (k) => { try { return localStorage.getItem(k); } catch(e) { return null; } },
+  set: (k,v) => { try { localStorage.setItem(k,v); } catch(e) {} },
+  del: (k) => { try { localStorage.removeItem(k); } catch(e) {} }
+};
+
+function persist() { /* no-op: writes go to server immediately */ }
+
+// Generic POST to the Apps Script API.
+// Uses text/plain content-type to avoid a CORS preflight (GAS doesn't handle OPTIONS).
+async function api(action, payload) {
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(Object.assign({ action }, payload || {}))
+    });
+    return await res.json();
+  } catch(e) {
+    return { ok: false, error: e.message || "Network error" };
+  }
+}
+
+async function serverSaveWager(n, ownerId, a, b) {
+  return api("save", { token: TOKEN, matchN: n, ownerId, a, b });
+}
+async function serverRefreshScores() {
+  return api("refresh", {});
+}
+async function serverClaimIdentity(name) {
+  return api("claim", { name });
+}
+
+/* ---------- Boot ---------- */
+(async function init() {
+  // Pre-initialise STATE so schedule renders immediately
+  STATE = { members: [], wagers:{}, results:{}, log:[], you:null, lastRefresh:null };
+
+  // Restore TZ pref
+  const tzpref = Session.get("l84_tz");
+  if (tzpref && TZS[tzpref]) TZSTATE = tzpref;
+  document.querySelectorAll("[data-tz]").forEach(x =>
+    x.classList.toggle("active", x.dataset.tz === TZSTATE));
+
+  // Show a loading hint
+  const an = $("#actingName"); if (an) an.textContent = "loading…";
+
+  TOKEN = Session.get("l84_token");
+
+  // Fetch everything from the server
+  const data = await api("init", { token: TOKEN || "" });
+
+  if (!data || data.ok === false) {
+    toast("Couldn't reach the server — pull to refresh", 5000);
+    if (an) an.textContent = "—";
+    return;
+  }
+
+  STATE = {
+    members: (data.members||[]).map(m => ({ id: m.id, name: m.name })),
+    wagers:  data.wagers  || {},
+    results: data.results || {},
+    log:     data.log     || [],
+    you:     data.me      || ((data.members||[])[0]||{}).id,
+    lastRefresh: null
+  };
+
+  STATE.members.forEach(m => {
+    m.name = m.name.replace(/^Dr\.?\s+/i, "");
+    if (m.name === "You") m.name = "Venu Nair";
+  });
+
+  if (data.me) {
+    acting = data.me;
+    renderActing(); renderAll();
+  } else {
+    acting = STATE.you;
+    renderActing(); renderAll();
+    showIdentityScreen(false);
+  }
+})();
+
+</script>
+</body>
+</html>
