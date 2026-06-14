@@ -395,7 +395,6 @@
       <div class="crest">L84</div>
       <div class="brand">
         <h1>L'84 · FIFA 2026</h1>
-        <div class="sub">Prototype · we are 26</div>
       </div>
       <button class="iconbtn" id="rulesBtn">Rules</button>
       <button class="iconbtn" id="exportBtn">Export</button>
@@ -746,7 +745,7 @@ function matchCardHTML(m, dd, rec){
     }).join('') : `<div class="pk-empty">No wagers yet — be the first.</div>`
   }<button class="pk-cta" data-open="${m.n}">${st==='open'?'Enter a wager':'View match'} →</button></div>`;
   return `<div class="match expandable status-${st}" data-match="${m.n}">
-    <div class="m-top">${chip}<span class="m-meta">${dd.time} ${dd.tz} · Grp ${m.group}</span></div>
+    <div class="m-top">${chip}<span class="m-meta">${dd.time} ${dd.tz} · Grp ${m.group} · M${m.n}</span></div>
     <div class="m-teams">
       <div class="t-name home">${m.a}</div>${mid}<div class="t-name away">${m.b}</div>
     </div>
