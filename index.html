@@ -829,7 +829,7 @@ function renderSchedule(){
     if(STATE.lastRefresh){ const d=disp(STATE.lastRefresh); fl.className="freshline"; fl.textContent=`Scores last refreshed ${d.date} · ${d.time} ${d.tz}`; }
     else { fl.className="freshline stale"; fl.textContent="Scores not refreshed yet — tap ↻ Scores above"; }
   }
-  const rec={}; standings().forEach(s=>rec[s.id]={w:s.w,l:s.l});
+  const rec={}; standings().forEach(s=>rec[s.id]={w:s.w6+s.w3,l:s.l});
   const now=Date.now();
   const rows=[];
   MATCHES.forEach(m=>rows.push({kind:"g",m,ko:m.koUTC}));
