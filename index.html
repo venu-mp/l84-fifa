@@ -785,7 +785,7 @@ function matchCardHTML(m, dd, rec){
   const owners = Object.keys(wgs);
   const isAdmin = ADMINS.includes(memberName(acting));
   const peek = `<div class="peek">${
-    owners.length ? `<div class="pk-head"><div>Player · record</div><div>Predicted</div><div>W/L</div><div>Pts</div></div>`+owners.map(oid=>{
+    owners.length ? `<div class="pk-head"><div>Player · record</div><div>Predicted</div><div>Result</div><div>Pts</div></div>`+owners.map(oid=>{
       const w=wgs[oid]; const pp=scoreWager(w,r);
       const cls = pp===null?'pend':(pp>0?'win':'loss');
       const wl = pp===null?'–':(pp>0?'W':'L');
@@ -1204,16 +1204,20 @@ function addMember(){
 /* ---------- Export ---------- */
 function exportCSV(){
   const lines=[["Match #","Date (PDT)","Group","Home","Away","Owner","Pick","Final","Points","Entered by","Backfill"].join(",")];
+  let count=0;
   for(const n in STATE.wagers){
-    const m=elFor(+n); const r=matchResult(+n);
+    const m=elFor(+n); if(!m) continue;  // skip unknown matches
+    const r=matchResult(+n);
     for(const oid in STATE.wagers[n]){
-      const w=STATE.wagers[n][oid]; const p=scoreWager(w,r); const dd=disp(m.koUTC);
+      const w=STATE.wagers[n][oid]; if(!w) continue;
+      const p=scoreWager(w,r); const dd=disp(m.koUTC);
       lines.push([m.n,`"${dd.date} ${dd.time} ${dd.tz}"`,m.group,`"${m.a}"`,`"${m.b}"`,`"${memberName(oid)}"`,
         `${w.a}-${w.b}`, r?`${r.a}-${r.b}`:"", p===null?"":p, `"${memberName(w.by)}"`, w.backfill?"yes":""].join(","));
+      count++;
     }
   }
   const csv=lines.join("\n");
-  openSheet(`<h2>Export</h2><div class="sub">All wagers, scores and points as CSV — copy, or download. In the hosted version this is your live Google Sheet.</div>
+  openSheet(`<h2>Export</h2><div class="sub">${count} wager${count!==1?'s':''} exported as CSV.</div>
     <a id="dl" class="btn" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">Download CSV</a>
     <textarea class="exp" readonly>${csv.replace(/</g,"&lt;")}</textarea>`);
   try{
