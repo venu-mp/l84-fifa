@@ -242,6 +242,8 @@
   .pk-head{display:grid;grid-template-columns:1fr 58px 26px 28px;gap:8px;padding:2px 2px 6px;
     font-size:9px;text-transform:uppercase;letter-spacing:.03em;color:var(--faint);font-weight:700;border-bottom:1px solid var(--line)}
   .pk-head div:nth-child(n+2){text-align:right}
+  .pk-row{display:grid;grid-template-columns:1fr 58px 26px 28px;gap:8px;padding:6px 2px;border-bottom:1px solid var(--line-2)}
+  .pk-row:last-of-type{border-bottom:none}
   .admin-badge{font-size:9px;font-weight:800;color:var(--red);background:rgba(226,59,64,.12);border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:middle;text-transform:uppercase;letter-spacing:.05em}
   .id-admin-tag{font-size:10px;color:var(--red);font-weight:800}
   .pk-row.pk-editable:active{background:var(--surface-2)}
@@ -1203,16 +1205,30 @@ function addMember(){
 
 /* ---------- Export ---------- */
 function exportCSV(){
-  const lines=[["Match #","Date (PDT)","Group","Home","Away","Owner","Pick","Final","Points","Entered by","Backfill"].join(",")];
+  // wrap value in quotes, prefix numbers-that-look-like-dates with = to force text
+  const q = v => `"${String(v).replace(/"/g,'""')}"`;
+  const score = (a,b) => `"${a}-${b}"`; // quoted so Excel won't parse as date
+  const lines=[["Match #","Date","Group","Home","Away","Owner","Pick","Final","Points","Entered by","Backfill"].join(",")];
   let count=0;
   for(const n in STATE.wagers){
-    const m=elFor(+n); if(!m) continue;  // skip unknown matches
+    const m=elFor(+n); if(!m) continue;
     const r=matchResult(+n);
     for(const oid in STATE.wagers[n]){
       const w=STATE.wagers[n][oid]; if(!w) continue;
       const p=scoreWager(w,r); const dd=disp(m.koUTC);
-      lines.push([m.n,`"${dd.date} ${dd.time} ${dd.tz}"`,m.group,`"${m.a}"`,`"${m.b}"`,`"${memberName(oid)}"`,
-        `${w.a}-${w.b}`, r?`${r.a}-${r.b}`:"", p===null?"":p, `"${memberName(w.by)}"`, w.backfill?"yes":""].join(","));
+      lines.push([
+        m.n,
+        q(`${dd.date} ${dd.time} ${dd.tz}`),
+        m.group,
+        q(m.a),
+        q(m.b),
+        q(memberName(oid)),
+        score(w.a,w.b),
+        r ? score(r.a,r.b) : "",
+        p===null ? "" : p,
+        q(memberName(w.by)),
+        w.backfill ? "yes" : ""
+      ].join(","));
       count++;
     }
   }
