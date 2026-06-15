@@ -228,7 +228,8 @@
   .pk-head{display:grid;grid-template-columns:1fr 58px 26px 28px;gap:8px;padding:2px 2px 6px;
     font-size:9px;text-transform:uppercase;letter-spacing:.03em;color:var(--faint);font-weight:700;border-bottom:1px solid var(--line)}
   .pk-head div:nth-child(n+2){text-align:right}
-  .pk-row.pk-editable{cursor:pointer}
+  .admin-badge{font-size:9px;font-weight:800;color:var(--red);background:rgba(226,59,64,.12);border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:middle;text-transform:uppercase;letter-spacing:.05em}
+  .id-admin-tag{font-size:10px;color:var(--red);font-weight:800}
   .pk-row.pk-editable:active{background:var(--surface-2)}
   .pk-edit-hint{font-size:9px;color:var(--blue);margin-left:2px}grid-template-columns:1fr 58px 26px 28px;gap:8px;align-items:center;padding:7px 2px;font-size:12px}
   .pk-row .who{min-width:0}
@@ -581,6 +582,8 @@ function slotLabel(code){
 
 
 /* ---------- Storage layer (shared if available, else in-memory) ---------- */
+const ADMINS = ["Venu Nair","Augustine Chandy","Anil Parameswaran"];
+
 let STATE=null, acting=null;
 let TZSTATE="PDT", SORTBY="pts";
 let dayState={};   // dateLabel -> "open" | "collapsed" (sticky within session)
@@ -655,7 +658,7 @@ function renderLeaderboard(){
     ${rows.map(r=>`
       <div class="lt-row" data-player="${r.id}">
         <div class="rank ${r.rank<=3?'r'+r.rank:''}">${r.rank}</div>
-        <div class="pname">${r.name}
+        <div class="pname">${r.name}${ADMINS.includes(r.name)?'<span class="admin-badge">admin</span>':''}
           <span class="pmeta">${r.placed} bet${r.placed!==1?'s':''}</span></div>
         <div class="wl"><b>${r.w}</b>–<s>${r.l}</s>${r.pending?`<span class="pend">${r.pending} pending</span>`:''}</div>
         <div class="pts ${r.pts===0?'zero':''}">${r.pts}</div>
@@ -899,7 +902,6 @@ function openMatch(n, preloadOwner){
 
   // entry form
   let form="";
-  const ADMINS = ["Venu Nair","Augustine Chandy"];
   const isAdmin = ADMINS.includes(memberName(acting));
   const canNormal = !locked;
 
@@ -1155,10 +1157,12 @@ function showIdentityScreen(canCancel){
   const screen=$("#idScreen");
   const list=$("#idList");
   screen.style.display="flex";
-  list.innerHTML=[...STATE.members].sort((a,b)=>a.name.localeCompare(b.name)).map(m=>`<button class="idname" data-mid="${m.id}">${m.name}</button>`).join("")
-    + `<button id="idAddBtn">+ Add your name</button>`;
+  list.innerHTML=[...STATE.members].sort((a,b)=>a.name.localeCompare(b.name)).map(m=>
+    `<button class="idname" data-mid="${m.id}">${m.name}${ADMINS.includes(m.name)?'<span class="id-admin-tag"> ★</span>':''}</button>`
+  ).join("") + `<button id="idAddBtn">+ Add your name</button>`;
   list.querySelectorAll(".idname").forEach(btn=>btn.onclick=async()=>{
-    const name = btn.textContent;
+    const member = STATE.members.find(m=>m.id===btn.dataset.mid);
+    const name = member ? member.name : btn.textContent.replace(/\s*★/g,'').trim();
     toast("Setting identity…");
     const r = await serverClaimIdentity(name);
     if(!r.ok){ 
@@ -1326,4 +1330,3 @@ async function serverClaimIdentity(name) {
 </script>
 </body>
 </html>
-
