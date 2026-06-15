@@ -118,10 +118,12 @@
     .chip{font-size:11px!important;padding:3px 8px!important}
     .m-meta{font-size:12px!important}
     .m-foot{font-size:13px!important}
-    .pname{font-size:16px!important}
-    .wl{font-size:14px!important}
-    .pts{font-size:20px!important}
-    .rank{font-size:15px!important}
+    .pname{font-size:14px!important}
+    .col-pts{font-size:15px!important}
+    .col-s{font-size:11px!important}
+    .prize{font-size:10px!important}
+    .pmeta{font-size:10px!important}
+    .rank{font-size:14px!important}
     .tab{font-size:15px!important;padding:12px 4px!important}
     .seg{font-size:13.5px!important;padding:9px 14px!important}
     .dayhdr .d{font-size:15px!important}
@@ -141,30 +143,42 @@
     .fld label{font-size:14px!important}
     .fld select,.fld input{font-size:16px!important}
     .btn{font-size:16px!important;padding:15px!important}
-    .lt-head{font-size:11px!important}
-    .lt-row{padding:12px!important}
+    .lt-head{font-size:10px!important}
+    .lt-row{padding:9px 8px!important}
+    .lt-head,.lt-row{gap:3px!important}
     .logtext{font-size:14px!important}
     .logtime{font-size:12px!important}
     .wrap{max-width:100%!important}
   }
+  /* Pot card */
+  .pot-card{background:linear-gradient(135deg,#E8B800,#FFD700);border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:center;color:#1a1200;box-shadow:0 2px 12px rgba(255,215,0,.4)}
+  .pot-card .pot-amt{font-size:24px;font-weight:900;font-family:var(--mono);letter-spacing:-.01em}
+  .pot-card .pot-sub{font-size:12px;font-weight:700;opacity:.7;margin-top:2px}
+  /* Scoring key */
+  .scoring-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;color:var(--faint);margin-bottom:10px;align-items:center}
+  .scoring-key b{color:var(--paper)}
+  .linkbtn-wrap{margin-left:auto}
+  /* Leaderboard: # | Player+meta | 6pt | 3pt | 0pt | Pts */
   .tablecard{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden}
-  .lt-head, .lt-row{display:grid; grid-template-columns:26px 1fr 52px 60px; align-items:center; gap:8px; padding:10px 12px}
+  .lt-head,.lt-row{display:grid;grid-template-columns:26px 1fr 34px 34px 34px 44px;align-items:start;gap:6px;padding:10px 12px}
   .lt-head{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--faint);font-weight:700;
-    border-bottom:1px solid var(--line); background:var(--surface-2)}
+    border-bottom:1px solid var(--line);background:var(--surface-2);align-items:center}
   .lt-head .sorth{cursor:pointer;-webkit-user-select:none;user-select:none}
   .lt-head .sorth:active{color:var(--paper)}
   .sarr{color:var(--red);font-size:9px}
-  .lt-row{border-top:1px solid var(--line); cursor:pointer}
+  .lt-row{border-top:1px solid var(--line);cursor:pointer}
   .lt-row:first-child{border-top:0}
   .lt-row:active{background:var(--surface-2)}
-  .rank{font-family:var(--mono); font-size:13px; color:var(--muted); text-align:center}
+  .rank{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:center;padding-top:2px}
   .rank.r1{color:#F4C24B} .rank.r2{color:#C7CDD6} .rank.r3{color:#D08B4E}
-  .pname{font-weight:600; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .pname .pmeta{font-size:10.5px;color:var(--faint);font-weight:500}
-  .pts{font-family:var(--mono); font-size:17px; font-weight:700; text-align:right; color:var(--green)}
-  .pts.zero{color:var(--faint)}
-  .wl{font-family:var(--mono); font-size:11.5px; text-align:right; color:var(--muted)}
-  .wl b{color:var(--green)} .wl s{color:var(--faint);text-decoration:none}
+  .pname{font-weight:650;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+  .prize{font-size:10px;font-weight:700;color:#9A7000;display:block;white-space:nowrap}
+  .pmeta{display:block;font-size:10.5px;color:var(--faint);font-weight:500;margin-top:1px}
+  .col-pts{font-family:var(--mono);font-size:15px;font-weight:800;text-align:right;color:var(--green)}
+  .col-pts.zero{color:var(--faint)}
+  .col-s{font-family:var(--mono);font-size:12px;text-align:right;color:var(--muted)}
+  .col-s.s6{color:var(--green)}
+  .col-s.s0{color:var(--faint);opacity:.5}
   .pend{display:block;font-size:9.5px;color:var(--amber)}
 
   /* ---------- Schedule ---------- */
@@ -335,14 +349,19 @@
   .empty{text-align:center;color:var(--faint);font-size:12.5px;padding:24px 12px}
 
   /* player detail rows */
-  .ph-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
-  .ph-row .mt{flex:1;min-width:0}
-  .ph-row .mt .a{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .ph-row .mt .b{font-size:10px;color:var(--faint);font-family:var(--mono)}
-  .ph-row .pick{font-family:var(--mono);font-size:13px;font-weight:700;text-align:right}
-  .ph-row .pick small{display:block;font-size:9px;color:var(--faint);font-weight:600}
-  .ph-row .pp{font-family:var(--mono);font-size:14px;font-weight:800;width:34px;text-align:right}
-  .ph-row .pp.win{color:var(--green)} .ph-row .pp.loss{color:var(--faint)} .ph-row .pp.pend{color:var(--amber)}
+  /* Player detail table */
+  .ph-head,.ph-row{display:grid;grid-template-columns:0.8fr 38px 42px 16px 56px 38px 28px;gap:3px;padding:7px 2px}
+  .ph-head{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700;border-bottom:1px solid var(--line);margin-bottom:2px}
+  .ph-row{border-bottom:1px solid var(--line)}
+  .ph-row:last-child{border-bottom:none}
+  .ph-match{font-size:10.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ph-pick{font-family:var(--mono);font-weight:800;font-size:13px;text-align:center;color:var(--blue)}
+  .ph-res{font-family:var(--mono);font-size:13px;text-align:center;color:var(--faint)}
+  .ph-res.res-known{color:var(--green)}
+  .ph-chk{font-size:14px;text-align:center;font-weight:700}
+  .ph-chk.win{color:var(--green)} .ph-chk.loss{color:var(--red)} .ph-chk.pend{color:var(--faint)}
+  .ph-pts{font-family:var(--mono);font-weight:800;font-size:13px;text-align:right}
+  .ph-pts.s6{color:var(--green)} .ph-pts.s3{color:var(--paper)} .ph-pts.s0{color:var(--faint)} .ph-pts.pend{color:var(--amber)}
   .ph-summary{display:flex;gap:14px;background:var(--surface-2);border:1px solid var(--line);
     border-radius:12px;padding:12px;margin-bottom:8px}
   .ph-summary .stat{flex:1;text-align:center}
@@ -434,7 +453,13 @@
   </div>
 
   <div class="view" id="view-table">
-    <div class="note">Ranked by total points. <b>3</b> for the right outcome <i>or</i> the right scoreline (1‑2 and 2‑1 count the same), <b>6</b> for both. Tap a column header to re-sort; tap a name for their match-by-match record. <button class="linkbtn" id="addMemberBtn">+ Add member</button></div>
+    <div class="pot-card" id="potCard"></div>
+    <div class="scoring-key">
+      <span><b>6-pt</b> outcome + scoreline</span>
+      <span><b>3-pt</b> outcome or scoreline</span>
+      <span><b>0-pt</b> neither</span>
+      <span class="linkbtn-wrap"><button class="linkbtn" id="addMemberBtn">+ Add member</button></span>
+    </div>
     <div class="tablecard" id="leaderboard"></div>
   </div>
 
@@ -623,7 +648,7 @@ function toast(msg, duration=2200){
 
 /* ---------- Standings ---------- */
 function standings(){
-  const rows = STATE.members.map(m=>({id:m.id,name:m.name,pts:0,w:0,l:0,pending:0,placed:0}));
+  const rows = STATE.members.map(m=>({id:m.id,name:m.name,pts:0,w6:0,w3:0,l:0,pending:0,placed:0}));
   const byId=Object.fromEntries(rows.map(r=>[r.id,r]));
   for(const n in STATE.wagers){
     const r=matchResult(+n);
@@ -633,10 +658,10 @@ function standings(){
       const p=STATE.wagers[n][owner];
       const pts=scoreWager(p,r);
       if(pts===null){ row.pending++; }
-      else { row.pts+=pts; if(pts>0) row.w++; else row.l++; }
+      else { row.pts+=pts; if(pts===6) row.w6++; else if(pts===3) row.w3++; else row.l++; }
     }
   }
-  rows.sort((a,b)=> b.pts-a.pts || b.w-a.w || a.name.localeCompare(b.name));
+  rows.sort((a,b)=> b.pts-a.pts || (b.w6+b.w3)-(a.w6+a.w3) || a.name.localeCompare(b.name));
   return rows;
 }
 
@@ -646,23 +671,47 @@ function renderActing(){
   if(el) el.textContent = memberName(acting);
 }
 function renderLeaderboard(){
-  const ranked=standings();              // always ranked by points first
-  ranked.forEach((r,i)=>r.rank=i+1);     // rank reflects standing, not display order
+  const ranked=standings();
+  ranked.forEach((r,i)=>r.rank=i+1);
+
+  // Pot card
+  const totalWagers = Object.values(STATE.wagers).reduce((s,m)=>s+Object.keys(m).length,0);
+  const pot = totalWagers * 100;
+  const potEl=$("#potCard");
+  if(potEl) potEl.innerHTML=`<div class="pot-amt">Total Pot = INR ${pot.toLocaleString('en-IN')}</div><div class="pot-sub">${totalWagers} wager${totalWagers!==1?'s':''} placed · ₹100 each</div>`;
+
+  // Payout splits for top 3
+  const splits=[0.5,0.3,0.2];
+
   let rows=ranked.slice();
   if(SORTBY==="name") rows.sort((a,b)=>a.name.localeCompare(b.name));
-  else if(SORTBY==="wl") rows.sort((a,b)=> b.w-a.w || a.l-b.l || a.name.localeCompare(b.name));
-  // SORTBY==="pts": keep points order
-  const arr = k => SORTBY===k ? ' <span class="sarr">▾</span>' : '';
-  const html = `
-    <div class="lt-head"><div>#</div><div class="sorth" data-sort="name">Player${arr("name")}</div><div class="sorth" data-sort="wl" style="text-align:right">W–L${arr("wl")}</div><div class="sorth" data-sort="pts" style="text-align:right">Pts${arr("pts")}</div></div>
-    ${rows.map(r=>`
-      <div class="lt-row" data-player="${r.id}">
+  else if(SORTBY==="pts") rows=ranked.slice(); // already sorted by pts
+  const arr=k=>SORTBY===k?` <span class="sarr">▾</span>`:'';
+  const html=`
+    <div class="lt-head">
+      <div>#</div>
+      <div class="sorth" data-sort="name">Player${arr("name")}</div>
+      <div style="text-align:right">6-PT</div>
+      <div style="text-align:right">3-PT</div>
+      <div style="text-align:right">0-PT</div>
+      <div class="sorth" data-sort="pts" style="text-align:right">Total${arr("pts")}</div>
+    </div>
+    ${rows.map(r=>{
+      const prizeAmt = r.rank<=3 ? Math.round(pot*splits[r.rank-1]) : 0;
+      const prizeStr = prizeAmt>0 ? `<span class="prize">(winnings = INR ${prizeAmt.toLocaleString('en-IN')})</span>` : '';
+      const adminTag = ADMINS.includes(r.name) ? ' · <span class="admin-badge">admin</span>' : '';
+      return `<div class="lt-row" data-player="${r.id}">
         <div class="rank ${r.rank<=3?'r'+r.rank:''}">${r.rank}</div>
-        <div class="pname">${r.name}${ADMINS.includes(r.name)?'<span class="admin-badge">admin</span>':''}
-          <span class="pmeta">${r.placed} bet${r.placed!==1?'s':''}</span></div>
-        <div class="wl"><b>${r.w}</b>–<s>${r.l}</s>${r.pending?`<span class="pend">${r.pending} pending</span>`:''}</div>
-        <div class="pts ${r.pts===0?'zero':''}">${r.pts}</div>
-      </div>`).join("")}
+        <div>
+          <div class="pname">${r.name} ${prizeStr}</div>
+          <span class="pmeta">${r.placed} bet${r.placed!==1?'s':''}${adminTag}${r.pending?` · <span class="pend">${r.pending} pending</span>`:''}</span>
+        </div>
+        <div class="col-s${r.w6>0?' s6':''}">${r.w6}</div>
+        <div class="col-s">${r.w3}</div>
+        <div class="col-s${r.l>0?' s0':''}">${r.l}</div>
+        <div class="col-pts${r.pts===0?' zero':''}">${r.pts}</div>
+      </div>`;
+    }).join("")}
   `;
   $("#leaderboard").innerHTML=html;
   document.querySelectorAll(".sorth[data-sort]").forEach(el=>el.onclick=()=>{ SORTBY=el.dataset.sort; renderLeaderboard(); });
@@ -1062,31 +1111,59 @@ function saveWager(n, locked){
 /* ---------- Player sheet ---------- */
 function openPlayer(pid){
   const rows=[];
-  let pts=0,w=0,l=0,pend=0;
+  let pts=0,w6=0,w3=0,l=0,pend=0,placed=0;
   for(const n in STATE.wagers){
     const wg=STATE.wagers[n][pid]; if(!wg) continue;
+    placed++;
     const m=elFor(+n); const r=matchResult(+n); const p=scoreWager(wg,r);
-    if(p===null) pend++; else { pts+=p; if(p>0) w++; else l++; }
+    if(p===null) pend++; else { pts+=p; if(p===6)w6++; else if(p===3)w3++; else l++; }
     rows.push({n:+n,m,wg,r,p});
   }
   rows.sort((x,y)=>x.n-y.n);
   const name=memberName(pid);
-  let body=`<h2>${name}</h2><div class="sub">Match-by-match record</div>
+  const pendStr = pend>0 ? ` (${pend} pending)` : '';
+  let body=`<h2>${name}</h2>
+    <div class="sub">${placed} bet${placed!==1?'s':''}${pendStr}</div>
     <div class="ph-summary">
       <div class="stat"><div class="v" style="color:var(--green)">${pts}</div><div class="l">Points</div></div>
-      <div class="stat"><div class="v">${w}<span style="color:var(--faint)">–</span>${l}</div><div class="l">Win–Loss</div></div>
-      <div class="stat"><div class="v" style="color:var(--amber)">${pend}</div><div class="l">Pending</div></div>
+      <div class="stat"><div class="v" style="color:var(--green)">${w6}</div><div class="l">6-pt</div></div>
+      <div class="stat"><div class="v">${w3}</div><div class="l">3-pt</div></div>
+      <div class="stat"><div class="v" style="color:var(--faint)">${l}</div><div class="l">0-pt</div></div>
     </div>`;
   if(!rows.length){ body+=`<div class="empty">No wagers placed yet.</div>`; }
   else {
-    body+=rows.map(r=>{
-      const resTxt = r.r?`${r.r.a}–${r.r.b}`:"—";
-      const cls = r.p===null?"pend":(r.p>0?"win":"loss");
-      const ptTxt = r.p===null?"·":(r.p+"");
+    // column header
+    body+=`<div class="ph-head">
+      <div>Match</div>
+      <div style="text-align:center">PICK</div>
+      <div style="text-align:center">Result</div>
+      <div></div>
+      <div style="text-align:center">Outcome</div>
+      <div style="text-align:center">Score</div>
+      <div style="text-align:right">Pts</div>
+    </div>`;
+    body+=rows.map(row=>{
+      const r=row.r; const wg=row.wg; const p=row.p; const m=row.m;
+      // outcome: right winner/draw
+      const sgn=x=>x>0?1:(x<0?-1:0);
+      const outcomeOk = r ? sgn(wg.a-wg.b)===sgn(r.a-r.b) : null;
+      // scoreline: direction-agnostic exact match
+      const scoreOk = r ? ((wg.a===r.a&&wg.b===r.b)||(wg.a===r.b&&wg.b===r.a)) : null;
+      const resTxt = r ? `${r.a}–${r.b}` : "—";
+      const ptTxt = p===null ? "·" : String(p);
+      const ptCls = p===null?"pend":(p===6?"s6":p===3?"s3":"s0");
+      const outStr = outcomeOk===null?"·":outcomeOk?"✓":"✗";
+      const outCls = outcomeOk===null?"pend":outcomeOk?"win":"loss";
+      const scrStr = scoreOk===null?"·":scoreOk?"✓":"✗";
+      const scrCls = scoreOk===null?"pend":scoreOk?"win":"loss";
       return `<div class="ph-row">
-        <div class="mt"><div class="a">${r.m.a} v ${r.m.b}</div><div class="b">${disp(r.m.koUTC).date} · result ${resTxt}</div></div>
-        <div class="pick">${r.wg.a}–${r.wg.b}<small>pick</small></div>
-        <div class="pp ${cls}">${ptTxt}</div>
+        <div class="ph-match">${m.a} v ${m.b}</div>
+        <div class="ph-pick">${wg.a}–${wg.b}</div>
+        <div class="ph-res${r?' res-known':''}">${resTxt}</div>
+        <div></div>
+        <div class="ph-chk ${outCls}">${outStr}</div>
+        <div class="ph-chk ${scrCls}">${scrStr}</div>
+        <div class="ph-pts ${ptCls}">${ptTxt}</div>
       </div>`;
     }).join("");
   }
