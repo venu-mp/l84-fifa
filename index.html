@@ -868,11 +868,15 @@ function renderLog(){
         <div class="logtime">${fmtClock(e.t)} · M${e.mN}</div></div></div>`;
     }
     const m=elFor(e.mN);
+    if(!m) return "";
     const proxy = e.by!==e.owner ? ` for <b>${memberName(e.owner)}</b>` : "";
-    const verb = e.type==="edit"?"updated":"entered";
+    const verb = e.type==="edit"?"updated":e.type==="delete"?"cleared":"entered";
     const oldtxt = e.type==="edit"&&e.oa!=null?` <span style="color:var(--faint)">(was ${e.oa}–${e.ob})</span>`:"";
+    const scoretxt = e.type==="delete"
+      ? `· ${m.a} v ${m.b}`
+      : `· ${m.a} <span class="sl">${e.a}–${e.b}</span> ${m.b}${oldtxt}`;
     return `<div class="logitem ${e.type}"><div class="tl"><i></i></div><div class="logbody">
-      <div class="logtext"><b>${memberName(e.by)}</b> ${verb}${proxy} · ${m.a} <span class="sl">${e.a}–${e.b}</span> ${m.b}${oldtxt}${e.backfill?'<span class="bf">backfill</span>':''}</div>
+      <div class="logtext"><b>${memberName(e.by)}</b> ${verb}${proxy} ${scoretxt}${e.backfill?'<span class="bf">backfill</span>':''}</div>
       <div class="logtime">${fmtClock(e.t)} · M${e.mN}</div></div></div>`;
   }).join("");
   $("#logfeed").innerHTML=html;
