@@ -305,6 +305,7 @@
     font-size:14px;font-weight:700;cursor:pointer;font-family:var(--ui)}
   .btn:active{transform:translateY(1px)}
   .btn.ghost{background:var(--surface-2);color:var(--paper);border:1px solid var(--line-2)}
+  .btnrow{display:grid;grid-template-columns:1fr 2fr;gap:8px}
   .btn[disabled]{opacity:.5;cursor:not-allowed}
 
   .lockbox{background:var(--amber-dim);border:1px solid var(--line-2);border-radius:10px;
@@ -788,7 +789,14 @@ function renderSchedule(){
   groups.forEach(g=>{
     const r=g.rows[0]; g.key = r.kind==="g" ? "d"+r.m.n : "dk"+r.k[0];
     g.started = new Date(g.rows[0].ko).getTime() <= now;
-    if(dayState[g.key]===undefined) dayState[g.key] = g.started ? "open" : "collapsed";
+    if(dayState[g.key]===undefined){
+      const allDoneCheck = g.rows.every(row=>!!matchResult(row.kind==="g"?row.m.n:row.k[0]));
+      if(allDoneCheck) dayState[g.key] = "collapsed";       // past: collapse
+      else if(g.started) dayState[g.key] = "open";          // today: open
+      else if(g.rows.some(row=>Object.keys(STATE.wagers[row.kind==="g"?row.m.n:row.k[0]]||{}).length>0))
+        dayState[g.key] = "open";                           // future with wagers: open
+      else dayState[g.key] = "collapsed";                   // future empty: collapse
+    }
     const isKO = g.rows[0].kind==="k";
     const tags=[]; g.rows.forEach(row=>{ const t=row.kind==="g"?row.m.group:row.k[1]; if(!tags.includes(t)) tags.push(t); });
     g.summary = isKO ? tags.join(" · ") : "Grp "+tags.join("·");
@@ -907,7 +915,10 @@ function openMatch(n){
             <div><div class="teamcap">${m.b}</div><input id="scB" type="number" min="0" max="20" inputmode="numeric" placeholder="?" value="${preB}"></div>
           </div></div>
       </div>
-      <button class="btn" id="saveWager">${btnLabel}</button>
+      <div class="btnrow">
+        <button class="btn ghost" id="clearWager">Clear</button>
+        <button class="btn" id="saveWager">${btnLabel}</button>
+      </div>
     </div>`;
   } else if(isAdmin){
     form = `
@@ -954,6 +965,23 @@ function openMatch(n){
     const ownerSel=$("#ownerSel"); if(ownerSel) ownerSel.value=acting;
     sv.onclick=()=>saveWager(n, locked);
   }
+  // Clear button — resets form; if an existing wager exists, deletes it from server first
+  const clr=$("#clearWager");
+  if(clr) clr.onclick=async()=>{
+    const oid=$("#ownerSel")?$("#ownerSel").value:acting;
+    const existing=(STATE.wagers[n]||{})[oid];
+    if(existing){
+      toast("Removing wager…");
+      const r = await api("delete", { token: TOKEN, matchN: n, ownerId: oid });
+      if(!r.ok){ toast("Error: "+(r.error||"unknown"), 4000); return; }
+      if(r.wagers) STATE.wagers = r.wagers;
+      toast("Wager removed");
+    }
+    const A=$("#scA"), B=$("#scB"), btn=$("#saveWager");
+    if(A){ A.value=""; A.placeholder="?"; }
+    if(B){ B.value=""; B.placeholder="?"; }
+    if(btn) btn.textContent="Save wager";
+  };
   // when owner changes, pre-fill that person's existing wager (if any) and relabel button
   const osel=$("#ownerSel");
   if(osel){
@@ -1238,9 +1266,11 @@ async function serverClaimIdentity(name) {
 
   if (data.me) {
     acting = data.me;
+    dayState = {}; // reset so schedule re-evaluates open/collapsed with real data
     renderActing(); renderAll();
   } else {
     acting = STATE.you;
+    dayState = {}; // reset so schedule re-evaluates with real data
     renderActing(); renderAll();
     showIdentityScreen(false);
   }
