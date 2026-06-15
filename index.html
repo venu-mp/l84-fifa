@@ -231,7 +231,7 @@
   .admin-badge{font-size:9px;font-weight:800;color:var(--red);background:rgba(226,59,64,.12);border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:middle;text-transform:uppercase;letter-spacing:.05em}
   .id-admin-tag{font-size:10px;color:var(--red);font-weight:800}
   .pk-row.pk-editable:active{background:var(--surface-2)}
-  .pk-edit-hint{font-size:9px;color:var(--blue);margin-left:2px}grid-template-columns:1fr 58px 26px 28px;gap:8px;align-items:center;padding:7px 2px;font-size:12px}
+  .pk-edit-hint{font-size:9px;color:var(--blue);margin-left:2px}
   .pk-row .who{min-width:0}
   .pk-row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pk-row .sub2{font-size:10px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -903,7 +903,7 @@ function openMatch(n, preloadOwner){
   // entry form
   let form="";
   const isAdmin = ADMINS.includes(memberName(acting));
-  const canNormal = !locked;
+  const canNormal = !locked && isAdmin;  // only admins can enter/edit wagers
 
   // build ownerSel options: acting first, then separator, then rest A-Z
   function ownerOpts(){
