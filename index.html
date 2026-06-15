@@ -949,15 +949,32 @@ function openMatch(n){
       const w=wgs[oid];
       const extra=(w.by!==oid?` · proxy: ${memberName(w.by)}`:'')+(w.backfill?' · backfill':'');
       const mine = oid===acting?' mine':'';
-      return `<div class="wrow${mine}">
+      const isAdmin = ADMINS.includes(memberName(acting));
+      const tappable = !locked && isAdmin ? ` data-tapowner="${oid}"` : '';
+      const tapHint = !locked && isAdmin ? ' style="cursor:pointer"' : '';
+      return `<div class="wrow${mine}"${tappable}${tapHint}>
         <div class="nm">${memberName(oid)}${extra?`<span class="by"> ${extra}</span>`:''}</div>
         <div class="pk">${w.a}–${w.b}</div>
+        ${!locked && isAdmin ? `<span style="font-size:10px;color:var(--blue);font-weight:700">edit</span>` : ''}
       </div>`;
     }).join("");
   }
   list+=`</div><div style="height:24px"></div>`;
 
   openSheet(head+scoreBlk+form+list);
+  // Admin: tap any wager row to load it into the form
+  document.querySelectorAll("[data-tapowner]").forEach(row=>row.onclick=()=>{
+    const oid = row.dataset.tapowner;
+    const w = (STATE.wagers[n]||{})[oid];
+    if(!w) return;
+    const osel=$("#ownerSel"), A=$("#scA"), B=$("#scB"), btn=$("#saveWager");
+    if(osel) osel.value=oid;
+    if(A) A.value=w.a;
+    if(B) B.value=w.b;
+    if(btn) btn.textContent="Update wager";
+    // scroll form into view
+    if(osel) osel.scrollIntoView({behavior:"smooth", block:"center"});
+  });
 
   // wire
   const sv=$("#saveWager");
@@ -976,6 +993,8 @@ function openMatch(n){
       if(!r.ok){ toast("Error: "+(r.error||"unknown"), 4000); return; }
       if(r.wagers) STATE.wagers = r.wagers;
       toast("Wager removed");
+      renderAll(); openMatch(n); // re-render so the row disappears
+      return;
     }
     const A=$("#scA"), B=$("#scB"), btn=$("#saveWager");
     if(A){ A.value=""; A.placeholder="?"; }
