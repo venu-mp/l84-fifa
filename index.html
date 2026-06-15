@@ -228,7 +228,9 @@
   .pk-head{display:grid;grid-template-columns:1fr 58px 26px 28px;gap:8px;padding:2px 2px 6px;
     font-size:9px;text-transform:uppercase;letter-spacing:.03em;color:var(--faint);font-weight:700;border-bottom:1px solid var(--line)}
   .pk-head div:nth-child(n+2){text-align:right}
-  .pk-row{display:grid;grid-template-columns:1fr 58px 26px 28px;gap:8px;align-items:center;padding:7px 2px;font-size:12px}
+  .pk-row.pk-editable{cursor:pointer}
+  .pk-row.pk-editable:active{background:var(--surface-2)}
+  .pk-edit-hint{font-size:9px;color:var(--blue);margin-left:2px}grid-template-columns:1fr 58px 26px 28px;gap:8px;align-items:center;padding:7px 2px;font-size:12px}
   .pk-row .who{min-width:0}
   .pk-row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pk-row .sub2{font-size:10px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -729,6 +731,7 @@ function matchCardHTML(m, dd, rec){
   const mid = r?`<span class="score">${r.a}–${r.b}</span>`:`<span class="vs">v</span>`;
   const wgs = STATE.wagers[m.n]||{};
   const owners = Object.keys(wgs);
+  const isAdmin = ADMINS.includes(memberName(acting));
   const peek = `<div class="peek">${
     owners.length ? `<div class="pk-head"><div>Player · record</div><div>Predicted</div><div>W/L</div><div>Pts</div></div>`+owners.map(oid=>{
       const w=wgs[oid]; const pp=scoreWager(w,r);
@@ -737,11 +740,12 @@ function matchCardHTML(m, dd, rec){
       const ptTxt = pp===null?'·':pp;
       const rc = rec[oid]||{w:0,l:0};
       const extra = (w.by!==oid?` · by ${memberName(w.by)}`:'')+(w.backfill?' · backfill':'');
-      return `<div class="pk-row">
+      const canEdit = !isLocked(m) && (isAdmin || oid===acting);
+      return `<div class="pk-row${canEdit?' pk-editable':''}"${canEdit?` data-open-owner="${oid}" data-open-match="${m.n}"`:''}">
         <div class="who"><div class="nm">${memberName(oid)}</div><div class="sub2">record <span class="recw">${rc.w}</span>–<span class="recl">${rc.l}</span>${extra}</div></div>
         <div class="pkk">${w.a}–${w.b}</div>
         <div class="wlc ${cls}">${wl}</div>
-        <div class="pp ${cls}">${ptTxt}</div>
+        <div class="pp ${cls}">${ptTxt}${canEdit?'<span class="pk-edit-hint"> ✎</span>':''}</div>
       </div>`;
     }).join('') : `<div class="pk-empty">No wagers yet — be the first.</div>`
   }<button class="pk-cta" data-open="${m.n}">${st==='open'?'Enter a wager':'View match'} →</button></div>`;
@@ -832,7 +836,17 @@ function renderSchedule(){
     const cab2=$("#collapseAllBtn"); if(cab2) cab2.textContent=anyOpen?"Collapse all":"Expand all";
   });
   document.querySelectorAll(".match.expandable").forEach(el=>{
-    el.onclick=(e)=>{ if(e.target.closest("[data-open]")) return; el.classList.toggle("open"); };
+    el.onclick=(e)=>{
+      // pk-row with data-open-owner: open match sheet and pre-load that person's wager
+      const pkRow=e.target.closest("[data-open-owner]");
+      if(pkRow){ e.stopPropagation(); openMatch(+pkRow.dataset.openMatch, pkRow.dataset.openOwner); return; }
+      // pk-cta button: open match sheet (handled by data-open below)
+      if(e.target.closest("[data-open]")) return;
+      // anything inside the peek area (but not a row/button): don't collapse
+      if(e.target.closest(".peek")) return;
+      // header area: toggle
+      el.classList.toggle("open");
+    };
   });
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=(e)=>{e.stopPropagation(); openMatch(+b.dataset.open);});
 }
@@ -868,7 +882,7 @@ function closeSheet(){ $("#sheet").classList.remove("show"); $("#scrim").classLi
 $("#scrim").onclick=closeSheet;
 
 /* ---------- Match sheet ---------- */
-function openMatch(n){
+function openMatch(n, preloadOwner){
   const m=elFor(n); const r=matchResult(n); const locked=isLocked(m);
   const wgs = STATE.wagers[n]||{};
   const owners = Object.keys(wgs);
@@ -979,8 +993,17 @@ function openMatch(n){
   // wire
   const sv=$("#saveWager");
   if(sv){
-    const ownerSel=$("#ownerSel"); if(ownerSel) ownerSel.value=acting;
+    const ownerSel=$("#ownerSel");
+    if(ownerSel) ownerSel.value = preloadOwner || acting;
     sv.onclick=()=>saveWager(n, locked);
+    // if a specific owner was requested (pk-row tap), pre-fill their wager
+    if(preloadOwner && ownerSel){
+      const pw=(STATE.wagers[n]||{})[preloadOwner];
+      const A=$("#scA"), B=$("#scB"), btn=$("#saveWager");
+      if(A) A.value = pw ? pw.a : '';
+      if(B) B.value = pw ? pw.b : '';
+      if(btn) btn.textContent = pw ? 'Update wager' : 'Save wager';
+    }
   }
   // Clear button — resets form; if an existing wager exists, deletes it from server first
   const clr=$("#clearWager");
@@ -991,7 +1014,7 @@ function openMatch(n){
       toast("Removing wager…");
       const r = await api("delete", { token: TOKEN, matchN: n, ownerId: oid });
       if(!r.ok){ toast("Error: "+(r.error||"unknown"), 4000); return; }
-      if(r.wagers) STATE.wagers = r.wagers;
+      if(r.wagers) STATE.wagers = mergeWagers(r.wagers);
       toast("Wager removed");
       renderAll(); openMatch(n); // re-render so the row disappears
       return;
@@ -1024,7 +1047,7 @@ function saveWager(n, locked){
   serverSaveWager(n, ownerId, a, b).then(r => {
     if(!r.ok){ toast("Error: " + (r.error||"unknown")); return; }
     // merge server wagers into STATE
-    if(r.wagers) STATE.wagers = r.wagers;
+    if(r.wagers) STATE.wagers = mergeWagers(r.wagers);
     toast(isProxy ? `Saved for ${memberName(ownerId)} — logged` : "Wager saved");
     renderAll(); openMatch(n);
   });
@@ -1217,7 +1240,12 @@ const Session = {
   del: (k) => { try { localStorage.removeItem(k); } catch(e) {} }
 };
 
-function persist() { /* no-op: writes go to server immediately */ }
+function mergeWagers(raw){
+  // Server returns keys as strings; coerce to numbers for consistent lookup
+  const out={};
+  Object.entries(raw||{}).forEach(([k,v])=>{ out[+k]=v; });
+  return out;
+}
 
 // Generic POST to the Apps Script API.
 // Uses text/plain content-type to avoid a CORS preflight (GAS doesn't handle OPTIONS).
@@ -1271,7 +1299,7 @@ async function serverClaimIdentity(name) {
 
   STATE = {
     members: (data.members||[]).map(m => ({ id: m.id, name: m.name })),
-    wagers:  data.wagers  || {},
+    wagers: mergeWagers(data.wagers),
     results: data.results || {},
     log:     data.log     || [],
     you:     data.me      || ((data.members||[])[0]||{}).id,
@@ -1298,3 +1326,4 @@ async function serverClaimIdentity(name) {
 </script>
 </body>
 </html>
+
