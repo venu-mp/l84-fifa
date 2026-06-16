@@ -78,6 +78,9 @@
   @media(prefers-color-scheme:dark){.actingrow{background:linear-gradient(135deg,#0d2e28,#0d2340);border:1px solid rgba(0,200,160,.2)}}
   .actingrow.loading{background:linear-gradient(135deg,#fdf3e0,#fde8c0);border:1px solid rgba(180,120,0,.2)}
   @media(prefers-color-scheme:dark){.actingrow.loading{background:linear-gradient(135deg,#2a1f00,#1f1500);border:1px solid rgba(255,180,0,.2)}}
+  .actingrow.loading .acting-label{color:#9a6200!important}
+  .actingrow.loading .acting-name{color:#7a4a00!important}
+  @media(prefers-color-scheme:dark){.actingrow.loading .acting-label{color:#ffb300!important}.actingrow.loading .acting-name{color:#ffd060!important}}
   .actingrow .acting-name{color:#0d3d30}
   @media(prefers-color-scheme:dark){.actingrow .acting-label{color:#5ecfb8}.actingrow .acting-name{color:#a8eede}}
   .acting-label{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
@@ -172,7 +175,9 @@
   .cp-old{color:var(--faint)}
   .cp-toggle{display:flex;gap:6px;margin:10px 0 6px}
   .cp-tog{flex:1;padding:8px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer}
-  .cp-tog.active{background:var(--blue);color:#fff;border-color:transparent}
+  .cp-tog.active{background:#2a7a6a;color:#fff;border-color:transparent}
+  .cp-header-fixed{min-height:110px}
+  .cp-copy-btn{background:#2a7a6a!important}
   .cp-preview{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12px;line-height:1.8;margin:12px 0;color:var(--muted)}
   /* Pot card */
   .pot-card{background:linear-gradient(135deg,#E8B800,#FFD700);border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:center;color:#1a1200;box-shadow:0 2px 12px rgba(255,215,0,.4)}
@@ -494,7 +499,7 @@
   </div>
 
   <div class="view" id="view-log">
-    <div class="note">Every wager, edit, and result — permanent and in order. Backfilled (post-kickoff) entries are flagged.</div>
+    <div class="note">Every wager, edit, score refresh and result — permanent and in order. Backfilled (post-kickoff) entries are flagged.</div>
     <div id="logfeed"></div>
   </div>
 
@@ -941,6 +946,11 @@ function renderLog(){
         <div class="logtext"><b>${memberName(e.by)}</b> added <b>${e.name}</b> to the pool</div>
         <div class="logtime">${fmtClock(e.t)}</div></div></div>`;
     }
+    if(e.type==="refresh"){
+      return `<div class="logitem refresh"><div class="tl"><i></i></div><div class="logbody">
+        <div class="logtext"><b>${memberName(e.by)}</b> refreshed scores · ${e.a} result${e.a!==1?'s':''} loaded</div>
+        <div class="logtime">${fmtClock(e.t)}</div></div></div>`;
+    }
     if(e.type==="result"){
       const m=elFor(e.mN);
       return `<div class="logitem result"><div class="tl"><i></i></div><div class="logbody">
@@ -1282,132 +1292,127 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
 $("#refreshBtn").onclick=refreshScores;
 /* ---------- Copy my picks (Testing — Venu Nair only) ---------- */
 function showCopyPicks(viewMode){
-  viewMode = viewMode || "me"; // "me" or "all"
+  viewMode = viewMode || "me";
+  const isAdmin = ADMINS.includes(memberName(acting));
   const now = Date.now();
+  const h3  = 3  * 3600 * 1000;
   const h24 = 24 * 3600 * 1000;
-  const h3  =  3 * 3600 * 1000;
-  const since = new Date(now - h24);
+
+  // All view: since midnight of previous day (~36-48h window)
+  const prevMidnight = new Date(); prevMidnight.setDate(prevMidnight.getDate()-1); prevMidnight.setHours(0,0,0,0);
+  const allSince = prevMidnight.getTime();
+  const meSince  = now - h24;
+
   const months2 = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const tzLabel = TZSTATE==="ist"?"IST":"PDT";
   function fmtDateTime(d){
-    const day = String(d.getDate()).padStart(2,'0');
-    const mon = months2[d.getMonth()];
-    let h = d.getHours(), ampm = h >= 12 ? 'pm' : 'am';
-    h = h % 12 || 12;
-    const mm = String(d.getMinutes()).padStart(2,'0');
-    return `${day}-${mon} ${h}:${mm}${ampm}`;
+    const day=String(d.getDate()).padStart(2,'0'), mon=months2[d.getMonth()];
+    let h=d.getHours(), ampm=h>=12?'pm':'am'; h=h%12||12;
+    return `${day}-${mon} ${h}:${String(d.getMinutes()).padStart(2,'0')}${ampm}`;
   }
 
+  // collect picks
+  const windowStart = viewMode==="all" ? allSince : meSince;
   const picks = [];
 
   for(const n in STATE.wagers){
-    const m = elFor(+n); if(!m) continue;
+    const m=elFor(+n); if(!m) continue;
     for(const oid in STATE.wagers[n]){
-      const w = STATE.wagers[n][oid]; if(!w) continue;
-      if(viewMode === "me" && oid !== acting) continue;
-      const wageredAt = new Date(w.at).getTime();
-      if(wageredAt < now - h24) continue;
-      if(wageredAt >= new Date(m.koUTC).getTime()) continue;
+      const w=STATE.wagers[n][oid]; if(!w) continue;
+      if(viewMode==="me" && oid!==acting) continue;
+      const at=new Date(w.at).getTime();
+      if(at < windowStart) continue;
+      if(at >= new Date(m.koUTC).getTime()) continue;
       if(w.backfill) continue;
-      picks.push({ type: "new", m, w, oid, age: now - wageredAt });
+      picks.push({type:"new", m, w, oid, age:now-at});
     }
   }
-
-  STATE.log.forEach(e => {
-    if(e.type !== "delete") return;
-    if(viewMode === "me" && e.owner !== acting) return;
-    const deletedAt = new Date(e.t).getTime();
-    if(deletedAt < now - h24) return;
-    const m = elFor(+e.mN); if(!m) return;
-    if(deletedAt >= new Date(m.koUTC).getTime()) return;
-    picks.push({ type: "cleared", m, oid: e.owner, age: now - deletedAt });
+  STATE.log.forEach(e=>{
+    if(e.type!=="delete") return;
+    if(viewMode==="me" && e.owner!==acting) return;
+    const at=new Date(e.t).getTime();
+    if(at < windowStart) return;
+    const m=elFor(+e.mN); if(!m) return;
+    if(at >= new Date(m.koUTC).getTime()) return;
+    picks.push({type:"cleared", m, oid:e.owner, age:now-at});
   });
+  picks.sort((a,b)=>a.m.n-b.m.n);
 
-  picks.sort((a,b) => a.m.n - b.m.n);
-
-  // window label: Me=dynamic 3h/24h, All=always 24h
+  // window label
   function buildSinceStr(){
-    if(viewMode === "all"){
-      return `${fmtDateTime(since)}, ${tzLabel} (past 24 hours)`;
-    }
-    const allRecent = picks.length > 0 && picks.every(p => p.age < h3);
-    const windowLabel = allRecent ? "past 3 hours" : "past 24 hours";
-    const sinceDate = new Date(now - (allRecent ? h3 : h24));
-    return `${fmtDateTime(sinceDate)}, ${tzLabel} (${windowLabel})`;
+    if(viewMode==="all")
+      return `${fmtDateTime(prevMidnight)}, ${tzLabel} (since yesterday midnight)`;
+    const allRecent=picks.length>0 && picks.every(p=>p.age<h3);
+    return `${fmtDateTime(new Date(now-(allRecent?h3:h24)))}, ${tzLabel} (past ${allRecent?'3 hours':'24 hours'})`;
   }
 
   function timeLabel(age){
-    const mins = Math.floor(age/60000);
-    if(mins < 60) return `${mins}m ago`;
-    return `${Math.floor(age/3600000)}h ago`;
+    const m=Math.floor(age/60000);
+    return m<60?`${m}m ago`:`${Math.floor(age/3600000)}h ago`;
   }
 
   function buildMsg(){
-    const allRecent = viewMode==="me" && picks.length > 0 && picks.every(p => p.age < h3);
-    const windowLabel = viewMode==="all" ? "past 24 hours" : (allRecent ? "past 3 hours" : "past 24 hours");
-    const dateStr = `${fmtDateTime(new Date())}, ${tzLabel} (${windowLabel})`;
-    const suffix = viewMode==="all" ? " [TESTING — all members]" : "";
-    const lines = [`My ⚽ picks ${dateStr}${suffix}`, ""];
-    picks.forEach(p => {
-      const match = `${p.m.a} v ${p.m.b}`;
-      const who = viewMode==="all" ? `*${memberName(p.oid)}*: ` : "";
-      if(p.type === "cleared")
-        lines.push(`${who}${match} — cleared`);
-      else
-        lines.push(`${who}${match} → ${p.w.a}-${p.w.b}${p.type==="edited"?" (changed)":""}`);
+    const allRecent=viewMode==="me" && picks.length>0 && picks.every(p=>p.age<h3);
+    const win=viewMode==="all"?"since yesterday midnight":(allRecent?"past 3 hours":"past 24 hours");
+    const suffix=viewMode==="all"?" [TESTING — all members]":"";
+    const lines=[`My ⚽ picks ${fmtDateTime(new Date())}, ${tzLabel} (${win})${suffix}`,""];
+    picks.forEach(p=>{
+      const match=`${p.m.a} v ${p.m.b}`;
+      const who=viewMode==="all"?`*${memberName(p.oid)}*: `:"";
+      lines.push(p.type==="cleared"
+        ?`${who}${match} — cleared`
+        :`${who}${match} → ${p.w.a}-${p.w.b}${p.type==="edited"?" (changed)":""}`);
     });
     lines.push("");
     return lines.join("\n");
   }
 
-  const byDay = {};
-  picks.forEach(p => {
-    const dd = disp(p.m.koUTC);
-    if(!byDay[dd.date]) byDay[dd.date] = [];
-    byDay[dd.date].push(p);
-  });
+  const msg=buildMsg();
 
-  let rows = "";
-  Object.entries(byDay).forEach(([date, dayPicks]) => {
-    rows += `<div class="cp-day">${date}</div>`;
-    dayPicks.forEach(p => {
-      const dd = disp(p.m.koUTC);
-      const fresh = p.age < h3;
-      const timeStr = timeLabel(p.age);
-      const icon = p.type==="cleared" ? "❌" : "⚽";
-      const owner = viewMode==="all" ? `<span style="font-size:10px;color:var(--blue);font-weight:600">${memberName(p.oid)}</span> · ` : "";
-      const scoreStr = p.type==="cleared"
-        ? `<span class="cp-cleared">cleared</span>`
-        : `<span class="cp-score">${p.w.a}–${p.w.b}${p.type==="edited"?'<span class="cp-tag"> changed</span>':''}</span>`;
-      rows += `<div class="cp-row">
+  // group by day
+  const byDay={};
+  picks.forEach(p=>{const dd=disp(p.m.koUTC);(byDay[dd.date]=byDay[dd.date]||[]).push(p);});
+  let rows="";
+  Object.entries(byDay).forEach(([date,dp])=>{
+    rows+=`<div class="cp-day">${date}</div>`;
+    dp.forEach(p=>{
+      const dd=disp(p.m.koUTC), fresh=p.age<h3;
+      const icon=p.type==="cleared"?"❌":"⚽";
+      const owner=viewMode==="all"?`<span style="font-size:10px;color:var(--blue);font-weight:600">${memberName(p.oid)}</span> · `:"";
+      const scoreStr=p.type==="cleared"
+        ?`<span class="cp-cleared">cleared</span>`
+        :`<span class="cp-score">${p.w.a}–${p.w.b}${p.type==="edited"?'<span class="cp-tag"> changed</span>':''}</span>`;
+      rows+=`<div class="cp-row">
         <span class="cp-icon">${icon}</span>
         <div class="cp-info">
           <div class="cp-match">${p.m.a} v ${p.m.b}:</div>
           <div class="cp-time">${owner}${dd.time} ${dd.tz} · M${p.m.n}</div>
         </div>
         <div class="cp-result">${scoreStr}</div>
-        <span class="cp-age ${fresh?'cp-fresh':'cp-old'}">${timeStr}</span>
+        <span class="cp-age ${fresh?'cp-fresh':'cp-old'}">${timeLabel(p.age)}</span>
       </div>`;
     });
   });
 
-  const msg = buildMsg();
-  const toggle = `<div class="cp-toggle">
+  // toggle — only admins see All
+  const toggle = isAdmin ? `<div class="cp-toggle">
     <button class="cp-tog ${viewMode==="me"?"active":""}" id="cpTogMe">Me</button>
     <button class="cp-tog ${viewMode==="all"?"active":""}" id="cpTogAll">All</button>
-  </div>`;
+  </div>` : "";
 
-  const emptyMsg = viewMode==="me"
-    ? "No recent picks from you in the last 24 hours"
-    : "No picks from anyone in the last 24 hours";
+  const emptyMsg=viewMode==="me"
+    ?"No recent picks from you — enter a wager first"
+    :"No picks from anyone since yesterday midnight";
 
-  const body = `
+  // fixed header height so content starts at same position regardless of view
+  const body=`
     <h2>Copy my recent picks</h2>
-    ${toggle}
-    <div class="sub">${picks.length} pick${picks.length!==1?'s':''} · future matches since ${buildSinceStr()}</div>
-    <button class="btn" id="cpCopyBtn">📋 Copy to clipboard</button>
-    <div class="cp-preview">${msg.replace(/\n/g,"<br>")}</div>
-    ${picks.length ? `<div class="cp-list">${rows}</div>` : `<div class="empty">${emptyMsg}</div>`}
+    <div class="cp-header-fixed">
+      ${toggle}
+      <div class="sub" style="margin:6px 0 8px">${picks.length} pick${picks.length!==1?'s':''} · future matches since ${buildSinceStr()}</div>
+      <button class="btn cp-copy-btn" id="cpCopyBtn">📋 Copy to clipboard</button>
+    </div>
+    ${picks.length?`<div class="cp-list">${rows}</div>`:`<div class="empty">${emptyMsg}</div>`}
     <div style="height:16px"></div>`;
 
   openSheet(body);
@@ -1416,18 +1421,17 @@ function showCopyPicks(viewMode){
     navigator.clipboard.writeText(msg).then(()=>{
       toast("Copied to clipboard ✓ — paste into WhatsApp");
     }).catch(()=>{
-      const ta = document.createElement("textarea");
-      ta.value = msg; document.body.appendChild(ta);
+      const ta=document.createElement("textarea");
+      ta.value=msg; document.body.appendChild(ta);
       ta.select(); document.execCommand("copy");
       document.body.removeChild(ta);
       toast("Copied to clipboard ✓ — paste into WhatsApp");
     });
   }
   doCopy();
-
-  $("#cpCopyBtn").onclick = () => { doCopy(); };
-  $("#cpTogMe").onclick  = () => { closeSheet(); showCopyPicks("me"); };
-  $("#cpTogAll").onclick = () => { closeSheet(); showCopyPicks("all"); };
+  $("#cpCopyBtn").onclick=()=>doCopy();
+  $("#cpTogMe")?.addEventListener("click",()=>{ closeSheet(); showCopyPicks("me"); });
+  $("#cpTogAll")?.addEventListener("click",()=>{ closeSheet(); showCopyPicks("all"); });
 }
 
 // Show button only for Venu Nair
@@ -1566,7 +1570,7 @@ async function serverSaveWager(n, ownerId, a, b) {
   return api("save", { token: TOKEN, matchN: n, ownerId, a, b });
 }
 async function serverRefreshScores() {
-  return api("refresh", {});
+  return api("refresh", { token: TOKEN || "" });
 }
 async function serverClaimIdentity(name) {
   return api("claim", { name });
