@@ -1207,8 +1207,7 @@ function addMember(){
 function exportCSV(){
   // wrap value in quotes, prefix numbers-that-look-like-dates with = to force text
   const q = v => `"${String(v).replace(/"/g,'""')}"`;
-  const score = (a,b) => `${a}:${b}`; // colon separator avoids Excel date auto-parse
-  const lines=[["Match #","Date","Group","Home","Away","Owner","Pick","Final","Points","Entered by","Backfill"].join(",")];
+  const lines=[["Match-#","Date","Group","Home","Away","Owner","Pick-Home","Pick-Away","Result-Home","Result-Away","Points","Entered-by","Backfill"].join(",")];
   let count=0;
   for(const n in STATE.wagers){
     const m=elFor(+n); if(!m) continue;
@@ -1223,8 +1222,8 @@ function exportCSV(){
         q(m.a),
         q(m.b),
         q(memberName(oid)),
-        score(w.a,w.b),
-        r ? score(r.a,r.b) : "",
+        w.a, w.b,
+        r ? r.a : "", r ? r.b : "",
         p===null ? "" : p,
         q(memberName(w.by)),
         w.backfill ? "yes" : ""
@@ -1278,7 +1277,6 @@ function showIdentityScreen(canCancel){
     renderActing(); renderAll();
   });
   $("#idAddBtn").onclick=()=>{
-    // check if current acting identity is an admin
     if(!acting || !ADMINS.includes(memberName(acting))){
       toast("Only admins can add new members", 3000);
       return;
@@ -1316,8 +1314,9 @@ function showIdentityScreen(canCancel){
 }
 $("#actingReset").onclick=async()=>{
   TOKEN = null;
-  acting = null;
   Session.del("l84_token");
+  // keep acting set so admin check works inside the picker
+  // it will be overwritten once a new name is chosen
   showIdentityScreen(true);
 };
 document.querySelectorAll("[data-tz]").forEach(b=>b.onclick=()=>{
