@@ -1207,7 +1207,7 @@ function addMember(){
 function exportCSV(){
   // wrap value in quotes, prefix numbers-that-look-like-dates with = to force text
   const q = v => `"${String(v).replace(/"/g,'""')}"`;
-  const score = (a,b) => `"${a}-${b}"`; // quoted so Excel won't parse as date
+  const score = (a,b) => `${a}:${b}`; // colon separator avoids Excel date auto-parse
   const lines=[["Match #","Date","Group","Home","Away","Owner","Pick","Final","Points","Entered by","Backfill"].join(",")];
   let count=0;
   for(const n in STATE.wagers){
@@ -1260,7 +1260,7 @@ function showIdentityScreen(canCancel){
   screen.style.display="flex";
   list.innerHTML=[...STATE.members].sort((a,b)=>a.name.localeCompare(b.name)).map(m=>
     `<button class="idname" data-mid="${m.id}">${m.name}${ADMINS.includes(m.name)?'<span class="id-admin-tag"> ★</span>':''}</button>`
-  ).join("") + `<button id="idAddBtn">+ Add your name</button>`;
+  ).join("") + `<button id="idAddBtn">+ Add member <span style="font-size:10px;opacity:.7;font-weight:600">(admin only)</span></button>`;
   list.querySelectorAll(".idname").forEach(btn=>btn.onclick=async()=>{
     const member = STATE.members.find(m=>m.id===btn.dataset.mid);
     const name = member ? member.name : btn.textContent.replace(/\s*★/g,'').trim();
@@ -1278,6 +1278,11 @@ function showIdentityScreen(canCancel){
     renderActing(); renderAll();
   });
   $("#idAddBtn").onclick=()=>{
+    // check if current acting identity is an admin
+    if(!acting || !ADMINS.includes(memberName(acting))){
+      toast("Only admins can add new members", 3000);
+      return;
+    }
     // replace button with inline input — no prompt() needed (blocked on iOS Safari)
     $("#idAddBtn").outerHTML=`<div id="idAddWrap" style="grid-column:1/-1;display:flex;gap:8px;margin-top:4px">
       <input id="idNameInput" type="text" placeholder="Your full name" autocomplete="name"
