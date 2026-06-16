@@ -157,8 +157,9 @@
   }
   /* Copy picks panel (cp-) — self-contained, no overlap with existing styles */
   .cp-day{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:700;padding:10px 0 4px}
-  .cp-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line-2)}
+  .cp-row{display:grid;grid-template-columns:20px 1fr 56px 36px;gap:8px;padding:8px 0;border-bottom:1px solid var(--line-2);align-items:center}
   .cp-row:last-child{border-bottom:none}
+  .cp-result{font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;white-space:nowrap}
   .cp-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
   .cp-info{flex:1;min-width:0}
   .cp-match{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1353,7 +1354,7 @@ function showCopyPicks(){
       if(p.type === "cleared")
         lines.push(`${who}: ${match} — cleared`);
       else if(p.type === "edited")
-        lines.push(`${who}: ${match} → ${p.w.a}-${p.w.b} (edited)`);
+        lines.push(`${who}: ${match} → ${p.w.a}-${p.w.b} (changed)`);
       else
         lines.push(`${who}: ${match} → ${p.w.a}-${p.w.b}`);
     });
@@ -1377,18 +1378,17 @@ function showCopyPicks(){
       const fresh = p.age < h3;
       const timeStr = timeLabel(p.age);
       const icon = p.type==="cleared" ? "❌" : "⚽";
+      const owner = `<span style="font-size:10px;color:var(--blue);font-weight:600">${memberName(p.oid)}</span>`;
       const scoreStr = p.type==="cleared"
         ? `<span class="cp-cleared">cleared</span>`
-        : `<span class="cp-score">${p.w.a}–${p.w.b}</span>`;
-      const tag = p.type==="edited" ? `<span class="cp-tag">edited</span>` : "";
-      const owner = `<span style="font-size:10px;color:var(--blue);font-weight:600">${memberName(p.oid)}</span>`;
+        : `<span class="cp-score">${p.w.a}–${p.w.b}${p.type==="edited"?' <span class="cp-tag">changed</span>':''}</span>`;
       rows += `<div class="cp-row">
         <span class="cp-icon">${icon}</span>
         <div class="cp-info">
-          <div class="cp-match">${p.m.a} v ${p.m.b} ${tag}</div>
+          <div class="cp-match">${p.m.a} v ${p.m.b}:</div>
           <div class="cp-time">${owner} · ${dd.time} ${dd.tz} · M${p.m.n}</div>
         </div>
-        ${scoreStr}
+        <div class="cp-result">${scoreStr}</div>
         <span class="cp-age ${fresh?'cp-fresh':'cp-old'}">${timeStr}</span>
       </div>`;
     });
@@ -1399,26 +1399,28 @@ function showCopyPicks(){
     <h2>Copy my recent picks</h2>
     <div class="sub">${picks.length} pick${picks.length!==1?'s':''} · future matches since ${buildSinceStr()}</div>
     <button class="btn" id="cpCopyBtn">📋 Copy to clipboard</button>
-    <div class="cp-list">${rows}</div>
     <div class="cp-preview">${msg.replace(/\n/g,"<br>")}</div>
+    <div class="cp-list">${rows}</div>
     <div style="height:16px"></div>`;
 
   openSheet(body);
 
-  $("#cpCopyBtn").onclick = () => {
+  // Auto-copy immediately on open — user can paste into WhatsApp right away
+  function doCopy(){
     navigator.clipboard.writeText(msg).then(()=>{
-      toast("Copied! Paste into WhatsApp ✓");
-      closeSheet();
+      toast("Copied to clipboard ✓ — paste into WhatsApp");
     }).catch(()=>{
       // fallback for Safari
       const ta = document.createElement("textarea");
       ta.value = msg; document.body.appendChild(ta);
       ta.select(); document.execCommand("copy");
       document.body.removeChild(ta);
-      toast("Copied! Paste into WhatsApp ✓");
-      closeSheet();
+      toast("Copied to clipboard ✓ — paste into WhatsApp");
     });
-  };
+  }
+  doCopy(); // auto-copy on open
+
+  $("#cpCopyBtn").onclick = () => { doCopy(); }; // re-copy if needed
 }
 
 // Show button only for Venu Nair
