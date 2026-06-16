@@ -74,7 +74,12 @@
   .iconbtn.red{background:var(--red);border-color:transparent}
 
   /* Identity bar (replaces old "You are" dropdown) */
-  .actingrow{display:flex;align-items:center;gap:8px;margin-top:9px;padding:6px 12px;background:var(--surface);border-radius:9px;border:1px solid var(--line-2)}
+  .actingrow{display:flex;align-items:center;gap:8px;margin-top:9px;padding:6px 12px;background:linear-gradient(135deg,#e8f4f0,#ddeef8);border-radius:9px;border:1px solid rgba(0,120,100,.15)}
+  @media(prefers-color-scheme:dark){.actingrow{background:linear-gradient(135deg,#0d2e28,#0d2340);border:1px solid rgba(0,200,160,.2)}}
+  .actingrow.loading{background:linear-gradient(135deg,#fdf3e0,#fde8c0);border:1px solid rgba(180,120,0,.2)}
+  @media(prefers-color-scheme:dark){.actingrow.loading{background:linear-gradient(135deg,#2a1f00,#1f1500);border:1px solid rgba(255,180,0,.2)}}
+  .actingrow .acting-name{color:#0d3d30}
+  @media(prefers-color-scheme:dark){.actingrow .acting-label{color:#5ecfb8}.actingrow .acting-name{color:#a8eede}}
   .acting-label{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
   .acting-name{font-size:14px;font-weight:750;flex:1;color:var(--paper)}
   .acting-reset{font-size:10px;color:var(--blue);background:none;border:none;cursor:pointer;padding:2px 4px;font-family:var(--ui);font-weight:600}
@@ -150,6 +155,22 @@
     .logtime{font-size:12px!important}
     .wrap{max-width:100%!important}
   }
+  /* Copy picks panel (cp-) — self-contained, no overlap with existing styles */
+  .cp-day{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:700;padding:10px 0 4px}
+  .cp-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line-2)}
+  .cp-row:last-child{border-bottom:none}
+  .cp-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
+  .cp-info{flex:1;min-width:0}
+  .cp-match{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cp-time{font-size:10px;color:var(--faint);margin-top:1px}
+  .cp-score{font-family:var(--mono);font-size:14px;font-weight:800;color:var(--green)}
+  .cp-cleared{font-size:12px;color:var(--red)}
+  .cp-tag{font-size:9px;font-weight:700;color:var(--amber);border-radius:4px;padding:1px 5px;margin-left:4px}
+  .cp-age{font-size:10px;font-family:var(--mono);white-space:nowrap;flex-shrink:0}
+  .cp-fresh{color:var(--green)}
+  .cp-old{color:var(--faint)}
+  .cp-list{margin:12px 0}
+  .cp-preview{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12px;line-height:1.8;margin:12px 0;color:var(--muted)}
   /* Pot card */
   .pot-card{background:linear-gradient(135deg,#E8B800,#FFD700);border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:center;color:#1a1200;box-shadow:0 2px 12px rgba(255,215,0,.4)}
   .pot-card .pot-amt{font-size:24px;font-weight:900;font-family:var(--mono);letter-spacing:-.01em}
@@ -335,8 +356,9 @@
 
   .note.legend ul{margin:6px 0 0 0;padding-left:18px}
   .note.legend ul li{margin:3px 0;font-size:11px}
-  .collapse-bar{display:flex;justify-content:flex-end;margin:-6px 2px 8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-  #collapseAllBtn{background:var(--blue);border-color:transparent;color:#fff}
+  .collapse-bar{display:flex;justify-content:flex-end;align-items:center;margin:-6px 2px 8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .collapse-bar.has-copy{justify-content:space-between}
+  #collapseAllBtn,#copyPicksBtn{background:var(--blue);border-color:transparent;color:#fff}
   .wlist .lhdr{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);
     font-weight:700;margin:14px 2px 4px;display:flex;justify-content:space-between}
   .whdr{display:flex;justify-content:space-between;font-size:9px;text-transform:uppercase;
@@ -450,7 +472,10 @@
         <li>Knockouts are placeholders until teams are decided.</li>
       </ul>
     </div>
-    <div class="collapse-bar"><button class="seg" id="collapseAllBtn">Collapse all</button></div>
+    <div class="collapse-bar">
+      <button class="seg" id="copyPicksBtn" style="display:none">📋 Copy my recent picks <span style="font-size:10px;opacity:.8">(Testing)</span></button>
+      <button class="seg" id="collapseAllBtn">Collapse all</button>
+    </div>
     <div id="schedule"></div>
   </div>
 
@@ -671,6 +696,7 @@ function standings(){
 function renderActing(){
   const el=$("#actingName");
   if(el) el.textContent = memberName(acting);
+  updateCopyPicksBtn();
 }
 function renderLeaderboard(){
   const ranked=standings();
@@ -1205,7 +1231,8 @@ function addMember(){
 
 /* ---------- Export ---------- */
 function exportCSV(){
-  // wrap value in quotes, prefix numbers-that-look-like-dates with = to force text
+  const totalWagers = Object.values(STATE.wagers).reduce((s,m)=>s+Object.keys(m).length,0);
+  if(totalWagers===0){ toast("Data still loading — try again in a moment"); return; }
   const q = v => `"${String(v).replace(/"/g,'""')}"`;
   const lines=[["Match-#","Date","Group","Home","Away","Owner","Pick-Home","Pick-Away","Result-Home","Result-Away","Points","Entered-by","Backfill"].join(",")];
   let count=0;
@@ -1250,7 +1277,162 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   $("#view-"+t.dataset.tab).classList.add("active");
 });
 $("#refreshBtn").onclick=refreshScores;
-$("#exportBtn").onclick=exportCSV;
+/* ---------- Copy my picks (Testing — Venu Nair only) ---------- */
+function showCopyPicks(){
+  const now = Date.now();
+  const h24 = 24 * 3600 * 1000;
+  const h3  =  3 * 3600 * 1000;
+
+  // collect wager actions from past 24h where match was future at time of entry
+  const picks = [];
+  const since = new Date(now - h24);
+  const months2 = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const tzLabel = TZSTATE==="ist"?"IST":"PDT";
+  function fmtDateTime(d){
+    const day = String(d.getDate()).padStart(2,'0');
+    const mon = months2[d.getMonth()];
+    let h = d.getHours(), ampm = h >= 12 ? 'pm' : 'am';
+    h = h % 12 || 12;
+    const mm = String(d.getMinutes()).padStart(2,'0');
+    return `${day}-${mon} ${h}:${mm}${ampm}`;
+  }
+  const sinceStr = `${fmtDateTime(since)}, ${tzLabel} (past 24 hours)`;
+  // after picks are collected, recalculate label based on actual ages
+  function buildSinceStr(){
+    const allRecent = picks.every(p => p.age < h3);
+    const windowLabel = allRecent ? "past 3 hours" : "past 24 hours";
+    const sinceDate = new Date(now - (allRecent ? h3 : h24));
+    return `${fmtDateTime(sinceDate)}, ${tzLabel} (${windowLabel})`;
+  }
+
+  // new/edited wagers — all owners
+  for(const n in STATE.wagers){
+    const m = elFor(+n); if(!m) continue;
+    for(const oid in STATE.wagers[n]){
+      const w = STATE.wagers[n][oid]; if(!w) continue;
+      const wageredAt = new Date(w.at).getTime();
+      if(wageredAt < now - h24) continue;           // older than 24h
+      if(wageredAt >= new Date(m.koUTC).getTime()) continue; // placed after kickoff
+      picks.push({ type: "new", m, w, oid, age: now - wageredAt });
+    }
+  }
+
+  // cleared wagers from log — all owners
+  STATE.log.forEach(e => {
+    if(e.type !== "delete") return;
+    const deletedAt = new Date(e.t).getTime();
+    if(deletedAt < now - h24) return;
+    const m = elFor(+e.mN); if(!m) return;
+    if(deletedAt >= new Date(m.koUTC).getTime()) return; // deleted after kickoff
+    picks.push({ type: "cleared", m, oid: e.owner, age: now - deletedAt });
+  });
+
+  // sort chronologically
+  picks.sort((a,b) => a.m.n - b.m.n);
+
+  if(!picks.length){
+    toast("No picks from the last 24 hours to share"); return;
+  }
+
+  // format time label
+  function timeLabel(age){
+    const mins = Math.floor(age/60000);
+    if(mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(age/3600000);
+    return `${hrs}h ago`;
+  }
+
+  // build WhatsApp message
+  function buildMsg(){
+    const dynamicSince = buildSinceStr();
+    const dateStr = `${fmtDateTime(new Date())}, ${tzLabel} (${picks.every(p=>p.age<h3)?'past 3 hours':'past 24 hours'})`;
+    const lines = [`My ⚽ picks ${dateStr} [TESTING — all members]`, ""];
+    picks.forEach(p => {
+      const match = `${p.m.a} v ${p.m.b}`;
+      const who = `*${memberName(p.oid)}*`;
+      if(p.type === "cleared")
+        lines.push(`${who}: ${match} — cleared`);
+      else if(p.type === "edited")
+        lines.push(`${who}: ${match} → ${p.w.a}-${p.w.b} (edited)`);
+      else
+        lines.push(`${who}: ${match} → ${p.w.a}-${p.w.b}`);
+    });
+    lines.push("");
+    return lines.join("\n");
+  }
+
+  // group picks by day
+  const byDay = {};
+  picks.forEach(p => {
+    const dd = disp(p.m.koUTC);
+    if(!byDay[dd.date]) byDay[dd.date] = [];
+    byDay[dd.date].push(p);
+  });
+
+  let rows = "";
+  Object.entries(byDay).forEach(([date, dayPicks]) => {
+    rows += `<div class="cp-day">${date}</div>`;
+    dayPicks.forEach(p => {
+      const dd = disp(p.m.koUTC);
+      const fresh = p.age < h3;
+      const timeStr = timeLabel(p.age);
+      const icon = p.type==="cleared" ? "❌" : "⚽";
+      const scoreStr = p.type==="cleared"
+        ? `<span class="cp-cleared">cleared</span>`
+        : `<span class="cp-score">${p.w.a}–${p.w.b}</span>`;
+      const tag = p.type==="edited" ? `<span class="cp-tag">edited</span>` : "";
+      const owner = `<span style="font-size:10px;color:var(--blue);font-weight:600">${memberName(p.oid)}</span>`;
+      rows += `<div class="cp-row">
+        <span class="cp-icon">${icon}</span>
+        <div class="cp-info">
+          <div class="cp-match">${p.m.a} v ${p.m.b} ${tag}</div>
+          <div class="cp-time">${owner} · ${dd.time} ${dd.tz} · M${p.m.n}</div>
+        </div>
+        ${scoreStr}
+        <span class="cp-age ${fresh?'cp-fresh':'cp-old'}">${timeStr}</span>
+      </div>`;
+    });
+  });
+
+  const msg = buildMsg();
+  const body = `
+    <h2>Copy my recent picks</h2>
+    <div class="sub">${picks.length} pick${picks.length!==1?'s':''} · future matches since ${buildSinceStr()}</div>
+    <button class="btn" id="cpCopyBtn">📋 Copy to clipboard</button>
+    <div class="cp-list">${rows}</div>
+    <div class="cp-preview">${msg.replace(/\n/g,"<br>")}</div>
+    <div style="height:16px"></div>`;
+
+  openSheet(body);
+
+  $("#cpCopyBtn").onclick = () => {
+    navigator.clipboard.writeText(msg).then(()=>{
+      toast("Copied! Paste into WhatsApp ✓");
+      closeSheet();
+    }).catch(()=>{
+      // fallback for Safari
+      const ta = document.createElement("textarea");
+      ta.value = msg; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast("Copied! Paste into WhatsApp ✓");
+      closeSheet();
+    });
+  };
+}
+
+// Show button only for Venu Nair
+function updateCopyPicksBtn(){
+  const btn = $("#copyPicksBtn");
+  const bar = btn?.closest(".collapse-bar");
+  if(!btn) return;
+  const show = memberName(acting) === "Venu Nair";
+  btn.style.display = show ? "" : "none";
+  if(bar) bar.classList.toggle("has-copy", show);
+  btn.onclick = showCopyPicks;
+}
+
+$("#copyPicksBtn").onclick = showCopyPicks;
 $("#addMemberBtn").onclick=addMember;
 /* ---------- Identity screen ---------- */
 function showIdentityScreen(canCancel){
@@ -1394,6 +1576,7 @@ async function serverClaimIdentity(name) {
 
   // Show a loading hint
   const an = $("#actingName"); if (an) an.textContent = "loading…";
+  const ar = $("#actingrow"); if (ar) ar.classList.add("loading");
 
   TOKEN = Session.get("l84_token");
 
@@ -1420,13 +1603,14 @@ async function serverClaimIdentity(name) {
     if (m.name === "You") m.name = "Venu Nair";
   });
 
+  $("#actingrow")?.classList.remove("loading");
   if (data.me) {
     acting = data.me;
-    dayState = {}; // reset so schedule re-evaluates open/collapsed with real data
+    dayState = {};
     renderActing(); renderAll();
   } else {
     acting = STATE.you;
-    dayState = {}; // reset so schedule re-evaluates with real data
+    dayState = {};
     renderActing(); renderAll();
     showIdentityScreen(false);
   }
