@@ -170,7 +170,9 @@
   .cp-age{font-size:10px;font-family:var(--mono);white-space:nowrap;flex-shrink:0}
   .cp-fresh{color:var(--green)}
   .cp-old{color:var(--faint)}
-  .cp-list{margin:12px 0}
+  .cp-toggle{display:flex;gap:6px;margin:10px 0 6px}
+  .cp-tog{flex:1;padding:8px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer}
+  .cp-tog.active{background:var(--blue);color:#fff;border-color:transparent}
   .cp-preview{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12px;line-height:1.8;margin:12px 0;color:var(--muted)}
   /* Pot card */
   .pot-card{background:linear-gradient(135deg,#E8B800,#FFD700);border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:center;color:#1a1200;box-shadow:0 2px 12px rgba(255,215,0,.4)}
@@ -1279,13 +1281,11 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
 });
 $("#refreshBtn").onclick=refreshScores;
 /* ---------- Copy my picks (Testing — Venu Nair only) ---------- */
-function showCopyPicks(){
+function showCopyPicks(viewMode){
+  viewMode = viewMode || "me"; // "me" or "all"
   const now = Date.now();
   const h24 = 24 * 3600 * 1000;
   const h3  =  3 * 3600 * 1000;
-
-  // collect wager actions from past 24h where match was future at time of entry
-  const picks = [];
   const since = new Date(now - h24);
   const months2 = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const tzLabel = TZSTATE==="ist"?"IST":"PDT";
@@ -1297,72 +1297,69 @@ function showCopyPicks(){
     const mm = String(d.getMinutes()).padStart(2,'0');
     return `${day}-${mon} ${h}:${mm}${ampm}`;
   }
-  const sinceStr = `${fmtDateTime(since)}, ${tzLabel} (past 24 hours)`;
-  // after picks are collected, recalculate label based on actual ages
+
+  const picks = [];
+
+  for(const n in STATE.wagers){
+    const m = elFor(+n); if(!m) continue;
+    for(const oid in STATE.wagers[n]){
+      const w = STATE.wagers[n][oid]; if(!w) continue;
+      if(viewMode === "me" && oid !== acting) continue;
+      const wageredAt = new Date(w.at).getTime();
+      if(wageredAt < now - h24) continue;
+      if(wageredAt >= new Date(m.koUTC).getTime()) continue;
+      if(w.backfill) continue;
+      picks.push({ type: "new", m, w, oid, age: now - wageredAt });
+    }
+  }
+
+  STATE.log.forEach(e => {
+    if(e.type !== "delete") return;
+    if(viewMode === "me" && e.owner !== acting) return;
+    const deletedAt = new Date(e.t).getTime();
+    if(deletedAt < now - h24) return;
+    const m = elFor(+e.mN); if(!m) return;
+    if(deletedAt >= new Date(m.koUTC).getTime()) return;
+    picks.push({ type: "cleared", m, oid: e.owner, age: now - deletedAt });
+  });
+
+  picks.sort((a,b) => a.m.n - b.m.n);
+
+  // window label: Me=dynamic 3h/24h, All=always 24h
   function buildSinceStr(){
-    const allRecent = picks.every(p => p.age < h3);
+    if(viewMode === "all"){
+      return `${fmtDateTime(since)}, ${tzLabel} (past 24 hours)`;
+    }
+    const allRecent = picks.length > 0 && picks.every(p => p.age < h3);
     const windowLabel = allRecent ? "past 3 hours" : "past 24 hours";
     const sinceDate = new Date(now - (allRecent ? h3 : h24));
     return `${fmtDateTime(sinceDate)}, ${tzLabel} (${windowLabel})`;
   }
 
-  // new/edited wagers — all owners
-  for(const n in STATE.wagers){
-    const m = elFor(+n); if(!m) continue;
-    for(const oid in STATE.wagers[n]){
-      const w = STATE.wagers[n][oid]; if(!w) continue;
-      const wageredAt = new Date(w.at).getTime();
-      if(wageredAt < now - h24) continue;           // older than 24h
-      if(wageredAt >= new Date(m.koUTC).getTime()) continue; // placed after kickoff
-      picks.push({ type: "new", m, w, oid, age: now - wageredAt });
-    }
-  }
-
-  // cleared wagers from log — all owners
-  STATE.log.forEach(e => {
-    if(e.type !== "delete") return;
-    const deletedAt = new Date(e.t).getTime();
-    if(deletedAt < now - h24) return;
-    const m = elFor(+e.mN); if(!m) return;
-    if(deletedAt >= new Date(m.koUTC).getTime()) return; // deleted after kickoff
-    picks.push({ type: "cleared", m, oid: e.owner, age: now - deletedAt });
-  });
-
-  // sort chronologically
-  picks.sort((a,b) => a.m.n - b.m.n);
-
-  if(!picks.length){
-    toast("No picks from the last 24 hours to share"); return;
-  }
-
-  // format time label
   function timeLabel(age){
     const mins = Math.floor(age/60000);
     if(mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(age/3600000);
-    return `${hrs}h ago`;
+    return `${Math.floor(age/3600000)}h ago`;
   }
 
-  // build WhatsApp message
   function buildMsg(){
-    const dynamicSince = buildSinceStr();
-    const dateStr = `${fmtDateTime(new Date())}, ${tzLabel} (${picks.every(p=>p.age<h3)?'past 3 hours':'past 24 hours'})`;
-    const lines = [`My ⚽ picks ${dateStr} [TESTING — all members]`, ""];
+    const allRecent = viewMode==="me" && picks.length > 0 && picks.every(p => p.age < h3);
+    const windowLabel = viewMode==="all" ? "past 24 hours" : (allRecent ? "past 3 hours" : "past 24 hours");
+    const dateStr = `${fmtDateTime(new Date())}, ${tzLabel} (${windowLabel})`;
+    const suffix = viewMode==="all" ? " [TESTING — all members]" : "";
+    const lines = [`My ⚽ picks ${dateStr}${suffix}`, ""];
     picks.forEach(p => {
       const match = `${p.m.a} v ${p.m.b}`;
-      const who = `*${memberName(p.oid)}*`;
+      const who = viewMode==="all" ? `*${memberName(p.oid)}*: ` : "";
       if(p.type === "cleared")
-        lines.push(`${who}: ${match} — cleared`);
-      else if(p.type === "edited")
-        lines.push(`${who}: ${match} → ${p.w.a}-${p.w.b} (changed)`);
+        lines.push(`${who}${match} — cleared`);
       else
-        lines.push(`${who}: ${match} → ${p.w.a}-${p.w.b}`);
+        lines.push(`${who}${match} → ${p.w.a}-${p.w.b}${p.type==="edited"?" (changed)":""}`);
     });
     lines.push("");
     return lines.join("\n");
   }
 
-  // group picks by day
   const byDay = {};
   picks.forEach(p => {
     const dd = disp(p.m.koUTC);
@@ -1378,15 +1375,15 @@ function showCopyPicks(){
       const fresh = p.age < h3;
       const timeStr = timeLabel(p.age);
       const icon = p.type==="cleared" ? "❌" : "⚽";
-      const owner = `<span style="font-size:10px;color:var(--blue);font-weight:600">${memberName(p.oid)}</span>`;
+      const owner = viewMode==="all" ? `<span style="font-size:10px;color:var(--blue);font-weight:600">${memberName(p.oid)}</span> · ` : "";
       const scoreStr = p.type==="cleared"
         ? `<span class="cp-cleared">cleared</span>`
-        : `<span class="cp-score">${p.w.a}–${p.w.b}${p.type==="edited"?' <span class="cp-tag">changed</span>':''}</span>`;
+        : `<span class="cp-score">${p.w.a}–${p.w.b}${p.type==="edited"?'<span class="cp-tag"> changed</span>':''}</span>`;
       rows += `<div class="cp-row">
         <span class="cp-icon">${icon}</span>
         <div class="cp-info">
           <div class="cp-match">${p.m.a} v ${p.m.b}:</div>
-          <div class="cp-time">${owner} · ${dd.time} ${dd.tz} · M${p.m.n}</div>
+          <div class="cp-time">${owner}${dd.time} ${dd.tz} · M${p.m.n}</div>
         </div>
         <div class="cp-result">${scoreStr}</div>
         <span class="cp-age ${fresh?'cp-fresh':'cp-old'}">${timeStr}</span>
@@ -1395,22 +1392,30 @@ function showCopyPicks(){
   });
 
   const msg = buildMsg();
+  const toggle = `<div class="cp-toggle">
+    <button class="cp-tog ${viewMode==="me"?"active":""}" id="cpTogMe">Me</button>
+    <button class="cp-tog ${viewMode==="all"?"active":""}" id="cpTogAll">All</button>
+  </div>`;
+
+  const emptyMsg = viewMode==="me"
+    ? "No recent picks from you in the last 24 hours"
+    : "No picks from anyone in the last 24 hours";
+
   const body = `
     <h2>Copy my recent picks</h2>
+    ${toggle}
     <div class="sub">${picks.length} pick${picks.length!==1?'s':''} · future matches since ${buildSinceStr()}</div>
     <button class="btn" id="cpCopyBtn">📋 Copy to clipboard</button>
     <div class="cp-preview">${msg.replace(/\n/g,"<br>")}</div>
-    <div class="cp-list">${rows}</div>
+    ${picks.length ? `<div class="cp-list">${rows}</div>` : `<div class="empty">${emptyMsg}</div>`}
     <div style="height:16px"></div>`;
 
   openSheet(body);
 
-  // Auto-copy immediately on open — user can paste into WhatsApp right away
   function doCopy(){
     navigator.clipboard.writeText(msg).then(()=>{
       toast("Copied to clipboard ✓ — paste into WhatsApp");
     }).catch(()=>{
-      // fallback for Safari
       const ta = document.createElement("textarea");
       ta.value = msg; document.body.appendChild(ta);
       ta.select(); document.execCommand("copy");
@@ -1418,9 +1423,11 @@ function showCopyPicks(){
       toast("Copied to clipboard ✓ — paste into WhatsApp");
     });
   }
-  doCopy(); // auto-copy on open
+  doCopy();
 
-  $("#cpCopyBtn").onclick = () => { doCopy(); }; // re-copy if needed
+  $("#cpCopyBtn").onclick = () => { doCopy(); };
+  $("#cpTogMe").onclick  = () => { closeSheet(); showCopyPicks("me"); };
+  $("#cpTogAll").onclick = () => { closeSheet(); showCopyPicks("all"); };
 }
 
 // Show button only for Venu Nair
