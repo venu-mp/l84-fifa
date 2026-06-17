@@ -1,4 +1,21 @@
 <!DOCTYPE html>
+<!--
+  L'84 FIFA 2026 — version log (newest first)
+  v28 · 2026-06-17 · Glossary separator fix (visible dimmed dot, hanging indent so wraps align under GP); 3-color column-header groups (GP/W/D/L blue, F/A/GD green, P gold)
+  v27 · 2026-06-17 · Glossary: bold "Glossary:" prefix, dimmed separators (no italics, kept upright for legibility)
+  v26 · 2026-06-17 · Modal X button: high-contrast inverted background (visible in light mode), nudged closer to right edge
+  v25 · 2026-06-17 · Modal close button sticky + larger (44px); group-standings glossary moved to top above tables
+  v24 · 2026-06-17 · Lowered bottom-sheet max-height (92vh→84vh) so "Playing as" row stays visible behind open modals
+  v23 · 2026-06-17 · More spacing below guidance line; shortened scores-refreshed status text ("Updated <date>, <time> <tz>")
+  v22 · 2026-06-17 · Group Standings polish (header tint, outline button, NEW badge top-right amber); guidance bullets collapsed under "more" toggle (closing-rule line stays visible)
+  v21 · 2026-06-17 · Group Standings surface (button above schedule → modal, 12 groups, flags+codes, completed matches only)
+  v20 · 2026-06-17 15:12 UTC · Removed Copy-to-WhatsApp feature (full cp- cleanup, regression-checked)
+  ----- earlier history -----
+  v4 · 2026-06-16 · Copy-my-recent-picks: two-layer toggle (time window + Me/All), red copy button
+  v3 · 2026-06-16 · Activity logs score refreshes; openfootball merge-not-clear; TEAM_ALIASES
+  v2 · 2026-06-15 · Participants redesign (gold pot card, 6/3/0-pt columns, prize inline); player-detail table
+  v1 · 2026-06-15 · Production on GitHub Pages (openfootball scores, admin-only wager entry)
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -158,30 +175,31 @@
     .logtime{font-size:12px!important}
     .wrap{max-width:100%!important}
   }
-  /* Copy picks panel (cp-) — self-contained, no overlap with existing styles */
-  .cp-day{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:700;padding:10px 0 4px}
-  .cp-row{display:grid;grid-template-columns:20px 1fr 56px 36px;gap:8px;padding:8px 0;border-bottom:1px solid var(--line-2);align-items:center}
-  .cp-row:last-child{border-bottom:none}
-  .cp-result{font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;white-space:nowrap}
-  .cp-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
-  .cp-info{flex:1;min-width:0}
-  .cp-match{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cp-time{font-size:10px;color:var(--faint);margin-top:1px}
-  .cp-score{font-family:var(--mono);font-size:14px;font-weight:800;color:var(--green)}
-  .cp-cleared{font-size:12px;color:var(--red)}
-  .cp-tag{font-size:9px;font-weight:700;color:var(--amber);border-radius:4px;padding:1px 5px;margin-left:4px}
-  .cp-age{font-size:10px;font-family:var(--mono);white-space:nowrap;flex-shrink:0}
-  .cp-fresh{color:var(--green)}
-  .cp-old{color:var(--faint)}
-  .cp-section-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;margin:8px 0 5px}
-  .cp-toggle{display:flex;gap:6px;margin-bottom:4px}
-  .cp-tog{flex:1;padding:8px 6px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--faint);font-size:12px;font-weight:600;cursor:pointer;line-height:1.3;opacity:.85}
-  .cp-tog.active{opacity:1}
-  .cp-tog.active{background:#2a7a6a;color:#fff;border-color:transparent}
-  .cp-header-fixed{min-height:230px}
-  .cp-header-fixed .sub{min-height:32px;display:block}
-  .cp-copy-btn{background:var(--red)!important}
-  .cp-preview{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12px;line-height:1.8;margin:12px 0;color:var(--muted)}
+  /* Group Standings (gs-) */
+  .gs-group{margin-bottom:14px}
+  .gs-ghead,.gs-row{display:grid;grid-template-columns:18px 22px 38px repeat(8,1fr);align-items:center;gap:2px}
+  .gs-ghead{padding:6px 2px 4px;border-bottom:1px solid var(--line);background:var(--surface-2);border-radius:6px}
+  .gs-gname{grid-column:1/4;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+  .gs-h{font-size:9.5px;font-weight:700;color:var(--faint);text-align:center}
+  .gs-h-cnt{color:var(--blue)}
+  .gs-h-gls{color:#0E9F6E}
+  .gs-h-pts{color:#E8B800}
+  .gs-row{padding:7px 2px;border-bottom:1px solid var(--line-2)}
+  .gs-row:last-child{border-bottom:none}
+  .gs-pos{font-size:11px;color:var(--faint);text-align:center}
+  .gs-flag{font-size:15px;text-align:center}
+  .gs-code{font-size:12px;font-weight:700;color:var(--blue)}
+  .gs-v{font-family:var(--mono);font-size:12px;text-align:center;color:var(--muted)}
+  .gs-pts{font-weight:800;color:var(--paper)}
+  .gs-gdpos{color:var(--green)}
+  .gs-neg{color:var(--red)} .gs-zero{color:var(--faint)}
+  .gs-foot{margin-top:8px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.9}
+  .gs-foot b{color:var(--paper)}
+  .gs-gloss{margin-top:10px;font-size:10.5px;color:var(--faint);line-height:1.6}
+  .gs-gloss-top{margin:8px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line-2);
+    padding-left:64px;text-indent:-64px}
+  .gs-gloss-top b{color:var(--muted);font-weight:800}
+  .gs-sep{color:var(--muted);font-style:normal;padding:0 2px;opacity:.55}
   /* Pot card */
   .pot-card{background:linear-gradient(135deg,#E8B800,#FFD700);border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:center;color:#1a1200;box-shadow:0 2px 12px rgba(255,215,0,.4)}
   .pot-card .pot-amt{font-size:24px;font-weight:900;font-family:var(--mono);letter-spacing:-.01em}
@@ -319,7 +337,7 @@
   .scrim.show{display:block}
   .sheet{
     position:fixed; left:50%; transform:translateX(-50%); bottom:0; z-index:70;
-    width:100%; max-width:540px; max-height:92vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    width:100%; max-width:540px; max-height:84vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
     background:var(--surface); border:1px solid var(--line); border-radius:18px 18px 0 0;
     padding:6px 16px calc(40px + env(safe-area-inset-bottom)); display:none;
   }
@@ -327,9 +345,10 @@
   .grab{width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:8px auto 12px}
   .sheet h2{font-size:16px;margin:0 0 2px}
   .sheet .sub{font-size:11.5px;color:var(--muted);margin-bottom:14px}
-  .closebtn{position:absolute;top:12px;right:14px;background:var(--surface-2);border:1px solid var(--line-2);
-    color:var(--paper);border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer;z-index:5}
-  .closebtn:active{background:var(--line-2)}
+  .closebtn{position:sticky;top:4px;left:100%;transform:translateX(-100%);margin-bottom:-44px;margin-right:-8px;
+    background:var(--paper);border:1px solid var(--line);
+    color:var(--surface);border-radius:10px;width:42px;height:42px;font-size:22px;cursor:pointer;z-index:8;display:block}
+  .closebtn:active{opacity:.7}
 
   .scorebig{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;
     background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:14px 12px;margin-bottom:14px}
@@ -367,9 +386,19 @@
 
   .note.legend ul{margin:6px 0 0 0;padding-left:18px}
   .note.legend ul li{margin:3px 0;font-size:11px}
+  /* Guidance accordion (gh-) — self-contained, independent of schedule collapse logic */
+  .gh-wrap{margin:2px 2px 18px}
+  .gh-always{margin:0 0 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .gh-toggle{background:transparent;border:none;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;padding:2px 4px;font-family:var(--ui);display:inline-flex;align-items:center;gap:3px}
+  .gh-chev{display:inline-block;transition:transform .15s ease;font-size:10px}
+  .gh-toggle[aria-expanded="true"] .gh-chev{transform:rotate(180deg)}
+  .gh-body{margin:6px 0 0;padding-left:18px;font-size:11px;color:var(--faint);line-height:1.5}
+  .gh-body li{margin:3px 0}
   .collapse-bar{display:flex;justify-content:flex-end;align-items:center;margin:-6px 2px 8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-  .collapse-bar.has-copy{justify-content:space-between}
-  #collapseAllBtn,#copyPicksBtn{background:var(--blue);border-color:transparent;color:#fff}
+  .collapse-bar.gs-bar{justify-content:space-between}
+  #groupStandingsBtn{background:transparent;border:1.5px solid var(--blue);color:var(--blue);font-weight:700;position:relative}
+  #groupStandingsBtn .gs-new{position:absolute;top:-7px;right:-6px;background:#FFB300;color:#1a1200;font-size:8px;font-weight:800;letter-spacing:.04em;padding:1px 5px;border-radius:8px;text-transform:uppercase;box-shadow:0 1px 4px rgba(255,179,0,.5)}
+  #collapseAllBtn{background:var(--blue);border-color:transparent;color:#fff}
   .wlist .lhdr{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);
     font-weight:700;margin:14px 2px 4px;display:flex;justify-content:space-between}
   .whdr{display:flex;justify-content:space-between;font-size:9px;text-transform:uppercase;
@@ -474,17 +503,20 @@
     <div class="segrow"><span class="lbl">Times in</span>
       <button class="seg active" data-tz="PDT">California · PDT</button>
       <button class="seg" data-tz="IST">India · IST</button></div>
-    <div class="freshline stale" id="freshline">Scores not refreshed yet — tap ↻ Scores above</div>
-    <div class="note legend">Wager closes the moment a match kicks off.
-      <ul>
+    <div class="freshline stale" id="freshline">Scores not refreshed yet — tap ↻ Scores</div>
+    <div class="gh-wrap">
+      <div class="note legend gh-always">Wager closes the moment a match kicks off.
+        <button class="gh-toggle" id="ghToggle" aria-expanded="false">more <span class="gh-chev">▾</span></button>
+      </div>
+      <ul class="gh-body" id="ghBody" hidden>
         <li>Tap a match to show its wagers; tap again to collapse.</li>
         <li>The button inside opens it to enter or edit.</li>
         <li>Switching to IST may shift the clock to the following day (since most kickoffs start after midnight India time), so the date may move to the next day.</li>
         <li>Knockouts are placeholders until teams are decided.</li>
       </ul>
     </div>
-    <div class="collapse-bar">
-      <button class="seg" id="copyPicksBtn" style="display:none">📋 Copy my recent picks <span style="font-size:10px;opacity:.8">(Testing)</span></button>
+    <div class="collapse-bar gs-bar">
+      <button class="seg" id="groupStandingsBtn"><span class="gs-new">new</span>📊 Group Standings</button>
       <button class="seg" id="collapseAllBtn">Collapse all</button>
     </div>
     <div id="schedule"></div>
@@ -703,12 +735,98 @@ function standings(){
   return rows;
 }
 
+/* ---------- Group Standings (team tables, derived from results) ---------- */
+// name -> {code, flag}. Flags: ISO-2 regional-indicator emoji; ENG/SCO use subdivision emoji.
+const TEAM_INFO = {
+  "Mexico":{c:"MEX",f:"🇲🇽"},"South Africa":{c:"RSA",f:"🇿🇦"},"South Korea":{c:"KOR",f:"🇰🇷"},"Czechia":{c:"CZE",f:"🇨🇿"},
+  "Canada":{c:"CAN",f:"🇨🇦"},"Bosnia & Herzegovina":{c:"BIH",f:"🇧🇦"},"Qatar":{c:"QAT",f:"🇶🇦"},"Switzerland":{c:"SUI",f:"🇨🇭"},
+  "Brazil":{c:"BRA",f:"🇧🇷"},"Morocco":{c:"MAR",f:"🇲🇦"},"Haiti":{c:"HAI",f:"🇭🇹"},"Scotland":{c:"SCO",f:"🏴󠁧󠁢󠁳󠁣󠁴󠁿"},
+  "United States":{c:"USA",f:"🇺🇸"},"Paraguay":{c:"PAR",f:"🇵🇾"},"Australia":{c:"AUS",f:"🇦🇺"},"Turkey":{c:"TUR",f:"🇹🇷"},
+  "Germany":{c:"GER",f:"🇩🇪"},"Curaçao":{c:"CUW",f:"🇨🇼"},"Ivory Coast":{c:"CIV",f:"🇨🇮"},"Ecuador":{c:"ECU",f:"🇪🇨"},
+  "Netherlands":{c:"NED",f:"🇳🇱"},"Japan":{c:"JPN",f:"🇯🇵"},"Sweden":{c:"SWE",f:"🇸🇪"},"Tunisia":{c:"TUN",f:"🇹🇳"},
+  "Belgium":{c:"BEL",f:"🇧🇪"},"Egypt":{c:"EGY",f:"🇪🇬"},"Iran":{c:"IRN",f:"🇮🇷"},"New Zealand":{c:"NZL",f:"🇳🇿"},
+  "Spain":{c:"ESP",f:"🇪🇸"},"Cape Verde":{c:"CPV",f:"🇨🇻"},"Saudi Arabia":{c:"KSA",f:"🇸🇦"},"Uruguay":{c:"URU",f:"🇺🇾"},
+  "France":{c:"FRA",f:"🇫🇷"},"Senegal":{c:"SEN",f:"🇸🇳"},"Iraq":{c:"IRQ",f:"🇮🇶"},"Norway":{c:"NOR",f:"🇳🇴"},
+  "Argentina":{c:"ARG",f:"🇦🇷"},"Algeria":{c:"ALG",f:"🇩🇿"},"Austria":{c:"AUT",f:"🇦🇹"},"Jordan":{c:"JOR",f:"🇯🇴"},
+  "Portugal":{c:"POR",f:"🇵🇹"},"DR Congo":{c:"COD",f:"🇨🇩"},"Uzbekistan":{c:"UZB",f:"🇺🇿"},"Colombia":{c:"COL",f:"🇨🇴"},
+  "England":{c:"ENG",f:"🏴󠁧󠁢󠁥󠁮󠁧󠁿"},"Croatia":{c:"CRO",f:"🇭🇷"},"Ghana":{c:"GHA",f:"🇬🇭"},"Panama":{c:"PAN",f:"🇵🇦"},
+};
+const teamCode = name => (TEAM_INFO[name]||{}).c || name.slice(0,3).toUpperCase();
+const teamFlag = name => (TEAM_INFO[name]||{}).f || "🏳️";
+
+// Compute standings per group from completed match results only.
+function groupStandings(){
+  const groups = {}; // letter -> { teamName -> stats }
+  MATCHES.forEach(m=>{
+    if(!m.group || !/^[A-L]$/.test(m.group)) return; // group stage only
+    groups[m.group] = groups[m.group] || {};
+    [m.a, m.b].forEach(t=>{
+      groups[m.group][t] = groups[m.group][t] || {team:t, gp:0,w:0,d:0,l:0,gf:0,ga:0,gd:0,pts:0};
+    });
+  });
+  MATCHES.forEach(m=>{
+    if(!m.group || !/^[A-L]$/.test(m.group)) return;
+    const r = matchResult(m.n);
+    if(!r) return; // only completed matches count
+    const A=groups[m.group][m.a], B=groups[m.group][m.b];
+    A.gp++; B.gp++;
+    A.gf+=r.a; A.ga+=r.b; B.gf+=r.b; B.ga+=r.a;
+    if(r.a>r.b){ A.w++; A.pts+=3; B.l++; }
+    else if(r.a<r.b){ B.w++; B.pts+=3; A.l++; }
+    else { A.d++; B.d++; A.pts++; B.pts++; }
+  });
+  // finalize: gd + sort each group by pts -> gd -> gf
+  const out = {};
+  Object.keys(groups).sort().forEach(g=>{
+    const teams = Object.values(groups[g]);
+    teams.forEach(t=> t.gd = t.gf - t.ga);
+    teams.sort((x,y)=> y.pts-x.pts || y.gd-x.gd || y.gf-x.gf || x.team.localeCompare(y.team));
+    out[g] = teams;
+  });
+  return out;
+}
+
+function showGroupStandings(){
+  const data = groupStandings();
+  const gdCls = gd => gd>0?'gs-gdpos':(gd<0?'gs-neg':'gs-zero');
+  const gdStr = gd => gd>0?`+${gd}`:`${gd}`;
+  let body = `<h2>Group Standings</h2>
+    <div class="sub">Completed matches only · partial groups show partial results</div>
+    <div class="gs-gloss gs-gloss-top"><b>Glossary:</b> GP games <i class="gs-sep">·</i> W win <i class="gs-sep">·</i> D draw <i class="gs-sep">·</i> L loss <i class="gs-sep">·</i> F goals for <i class="gs-sep">·</i> A goals against <i class="gs-sep">·</i> GD goal difference <i class="gs-sep">·</i> P points</div>`;
+  Object.keys(data).forEach(g=>{
+    body += `<div class="gs-group">
+      <div class="gs-ghead">
+        <span class="gs-gname">Group ${g}</span>
+        <span class="gs-h gs-h-cnt">GP</span><span class="gs-h gs-h-cnt">W</span><span class="gs-h gs-h-cnt">D</span><span class="gs-h gs-h-cnt">L</span>
+        <span class="gs-h gs-h-gls">F</span><span class="gs-h gs-h-gls">A</span><span class="gs-h gs-h-gls">GD</span>
+        <span class="gs-h gs-h-pts">P</span>
+      </div>`;
+    data[g].forEach((t,i)=>{
+      body += `<div class="gs-row">
+        <span class="gs-pos">${i+1}</span>
+        <span class="gs-flag">${teamFlag(t.team)}</span>
+        <span class="gs-code">${teamCode(t.team)}</span>
+        <span class="gs-v">${t.gp}</span><span class="gs-v">${t.w}</span><span class="gs-v">${t.d}</span><span class="gs-v">${t.l}</span>
+        <span class="gs-v">${t.gf}</span><span class="gs-v">${t.ga}</span>
+        <span class="gs-v ${gdCls(t.gd)}">${gdStr(t.gd)}</span>
+        <span class="gs-v gs-pts">${t.pts}</span>
+      </div>`;
+    });
+    body += `</div>`;
+  });
+  body += `<div class="gs-foot">
+    <div><b>Positions 1, 2:</b> Advance to Round of 32</div>
+    <div><b>Position 3:</b> Best 8 third-place teams advance</div>
+    <div><b>Position 4:</b> Eliminated</div>
+  </div><div style="height:24px"></div>`;
+  openSheet(body);
+}
+
 /* ---------- Renders ---------- */
 function renderActing(){
   const el=$("#actingName");
   if(el) el.textContent = memberName(acting);
   const al=$(".acting-label"); if(al) al.textContent = "Playing as";
-  updateCopyPicksBtn();
 }
 function renderLeaderboard(){
   const ranked=standings();
@@ -866,8 +984,8 @@ function koCardHTML(k, dd){
 function renderSchedule(){
   const fl=$("#freshline");
   if(fl){
-    if(STATE.lastRefresh){ const d=disp(STATE.lastRefresh); fl.className="freshline"; fl.textContent=`Scores last refreshed ${d.date} · ${d.time} ${d.tz}`; }
-    else { fl.className="freshline stale"; fl.textContent="Scores not refreshed yet — tap ↻ Scores above"; }
+    if(STATE.lastRefresh){ const d=disp(STATE.lastRefresh); fl.className="freshline"; fl.textContent=`Updated ${d.date}, ${d.time} ${d.tz}`; }
+    else { fl.className="freshline stale"; fl.textContent="Scores not refreshed yet — tap ↻ Scores"; }
   }
   const rec={}; standings().forEach(s=>rec[s.id]={w:s.w6+s.w3,l:s.l});
   const now=Date.now();
@@ -1294,164 +1412,6 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   $("#view-"+t.dataset.tab).classList.add("active");
 });
 $("#refreshBtn").onclick=refreshScores;
-/* ---------- Copy my picks (Testing — Venu Nair only) ---------- */
-function showCopyPicks(timeMode, scopeMode){
-  timeMode = timeMode || "3h";       // "3h" or "midnight"
-  scopeMode = scopeMode || "me";     // "me" or "all"
-  const isAdmin = ADMINS.includes(memberName(acting));
-  if(!isAdmin) scopeMode = "me";     // non-admins always see their own
-  const now = Date.now();
-  const h3  = 3  * 3600 * 1000;
-  const h24 = 24 * 3600 * 1000;
-
-  const prevMidnight = new Date(); prevMidnight.setDate(prevMidnight.getDate()-1); prevMidnight.setHours(0,0,0,0);
-  const windowStart = timeMode==="midnight" ? prevMidnight.getTime() : now - h3;
-  const windowLabel = timeMode==="midnight" ? "since yesterday midnight" : "past 3 hours";
-
-  const months2 = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const tzLabel = TZSTATE==="ist"?"IST":"PDT";
-  function fmtDateTime(d){
-    const day=String(d.getDate()).padStart(2,'0'), mon=months2[d.getMonth()];
-    let h=d.getHours(), ampm=h>=12?'pm':'am'; h=h%12||12;
-    return `${day}-${mon} ${h}:${String(d.getMinutes()).padStart(2,'0')}${ampm}`;
-  }
-  const sinceDate = timeMode==="midnight" ? prevMidnight : new Date(windowStart);
-  const sinceStr = `${fmtDateTime(sinceDate)}, ${tzLabel} (${windowLabel})`;
-
-  // collect picks for the current timeMode + scopeMode combination
-  const picks = [];
-  for(const n in STATE.wagers){
-    const m=elFor(+n); if(!m) continue;
-    for(const oid in STATE.wagers[n]){
-      const w=STATE.wagers[n][oid]; if(!w) continue;
-      if(scopeMode==="me" && oid!==acting) continue;
-      const at=new Date(w.at).getTime();
-      if(at < windowStart) continue;
-      if(at >= new Date(m.koUTC).getTime()) continue;
-      if(w.backfill) continue;
-      picks.push({type:"new", m, w, oid, age:now-at});
-    }
-  }
-  STATE.log.forEach(e=>{
-    if(e.type!=="delete") return;
-    if(scopeMode==="me" && e.owner!==acting) return;
-    const at=new Date(e.t).getTime();
-    if(at < windowStart) return;
-    const m=elFor(+e.mN); if(!m) return;
-    if(at >= new Date(m.koUTC).getTime()) return;
-    picks.push({type:"cleared", m, oid:e.owner, age:now-at});
-  });
-  picks.sort((a,b)=>a.m.n-b.m.n);
-
-  function timeLabel(age){
-    const m=Math.floor(age/60000);
-    return m<60?`${m}m ago`:`${Math.floor(age/3600000)}h ago`;
-  }
-
-  function buildMsg(){
-    const titlePrefix = scopeMode==="all" ? "All" : "My";
-    const lines=[`${titlePrefix} ⚽ picks ${fmtDateTime(sinceDate)}, ${tzLabel} (${windowLabel})`,""];
-    picks.forEach(p=>{
-      const match=`${p.m.a} v ${p.m.b}`;
-      const who=scopeMode==="all"?`*${memberName(p.oid)}*: `:"";
-      lines.push(p.type==="cleared"
-        ?`${who}${match} — cleared`
-        :`${who}${match} → ${p.w.a}-${p.w.b}${p.type==="edited"?" (changed)":""}`);
-    });
-    lines.push("");
-    return lines.join("\n");
-  }
-  const msg=buildMsg();
-
-  // group by day
-  const byDay={};
-  picks.forEach(p=>{const dd=disp(p.m.koUTC);(byDay[dd.date]=byDay[dd.date]||[]).push(p);});
-  let rows="";
-  Object.entries(byDay).forEach(([date,dp])=>{
-    rows+=`<div class="cp-day">${date}</div>`;
-    dp.forEach(p=>{
-      const dd=disp(p.m.koUTC), fresh=p.age<h3;
-      const icon=p.type==="cleared"?"❌":"⚽";
-      const owner=scopeMode==="all"?`<span style="font-size:10px;color:var(--blue);font-weight:600">${memberName(p.oid)}</span> · `:"";
-      const scoreStr=p.type==="cleared"
-        ?`<span class="cp-cleared">cleared</span>`
-        :`<span class="cp-score">${p.w.a}–${p.w.b}${p.type==="edited"?'<span class="cp-tag"> changed</span>':''}</span>`;
-      rows+=`<div class="cp-row">
-        <span class="cp-icon">${icon}</span>
-        <div class="cp-info">
-          <div class="cp-match">${p.m.a} v ${p.m.b}:</div>
-          <div class="cp-time">${owner}${dd.time} ${dd.tz} · M${p.m.n}</div>
-        </div>
-        <div class="cp-result">${scoreStr}</div>
-        <span class="cp-age ${fresh?'cp-fresh':'cp-old'}">${timeLabel(p.age)}</span>
-      </div>`;
-    });
-  });
-
-  // Layer 1: time window — visible to everyone
-  const timeToggle = `<div class="cp-section-label">Bets made</div>
-    <div class="cp-toggle">
-      <button class="cp-tog ${timeMode==="3h"?"active":""}" id="cpTogT3h">Past 3 hours</button>
-      <button class="cp-tog ${timeMode==="midnight"?"active":""}" id="cpTogTMid">Since 12am ${tzLabel}<br>${fmtDateTime(prevMidnight).split(' ')[0]}</button>
-    </div>`;
-
-  // Layer 2: scope — admin only
-  const scopeToggle = isAdmin ? `<div class="cp-section-label">Show (admin)</div>
-    <div class="cp-toggle">
-      <button class="cp-tog ${scopeMode==="me"?"active":""}" id="cpTogMe">Me</button>
-      <button class="cp-tog ${scopeMode==="all"?"active":""}" id="cpTogAll">All</button>
-    </div>` : "";
-
-  const emptyMsg = scopeMode==="me"
-    ? "No recent picks from you — enter a wager first"
-    : "No picks from anyone in this window";
-
-  const body=`
-    <h2>Copy my recent picks</h2>
-    <div class="cp-header-fixed">
-      ${timeToggle}
-      ${scopeToggle}
-      ${picks.length ? `<button class="btn cp-copy-btn" id="cpCopyBtn">📋 Copy to Clipboard (to paste in WhatsApp chat)</button>` : ""}
-      <div class="sub" style="margin:8px 0 0">${picks.length} pick${picks.length!==1?'s':''} · future matches since ${sinceStr}</div>
-    </div>
-    ${picks.length ? `<div class="cp-preview">${msg.replace(/\n/g,"<br>")}</div>` : ""}
-    ${picks.length?`<div class="cp-list">${rows}</div>`:`<div class="empty">${emptyMsg}</div>`}
-    <div style="height:16px"></div>`;
-
-  openSheet(body);
-
-  function doCopy(){
-    navigator.clipboard.writeText(msg).then(()=>{
-      toast("Copied to clipboard ✓ — paste into WhatsApp");
-    }).catch(()=>{
-      const ta=document.createElement("textarea");
-      ta.value=msg; document.body.appendChild(ta);
-      ta.select(); document.execCommand("copy");
-      document.body.removeChild(ta);
-      toast("Copied to clipboard ✓ — paste into WhatsApp");
-    });
-  }
-  if(picks.length) doCopy(); // auto-copy only when there's something to copy
-  $("#cpCopyBtn")?.addEventListener("click",()=>doCopy());
-  $("#cpTogT3h")?.addEventListener("click",()=>{ closeSheet(); showCopyPicks("3h", scopeMode); });
-  $("#cpTogTMid")?.addEventListener("click",()=>{ closeSheet(); showCopyPicks("midnight", scopeMode); });
-  $("#cpTogMe")?.addEventListener("click",()=>{ closeSheet(); showCopyPicks(timeMode, "me"); });
-  $("#cpTogAll")?.addEventListener("click",()=>{ closeSheet(); showCopyPicks(timeMode, "all"); });
-}
-
-// Show button only for Venu Nair
-function updateCopyPicksBtn(){
-  const btn = $("#copyPicksBtn");
-  const bar = btn?.closest(".collapse-bar");
-  if(!btn) return;
-  const testers = ["Venu Nair", "Augustine Chandy"];
-  const show = testers.includes(memberName(acting));
-  btn.style.display = show ? "" : "none";
-  if(bar) bar.classList.toggle("has-copy", show);
-  btn.onclick = ()=>showCopyPicks();
-}
-
-$("#copyPicksBtn").onclick = ()=>showCopyPicks();
 $("#addMemberBtn").onclick=addMember;
 /* ---------- Identity screen ---------- */
 function showIdentityScreen(canCancel){
@@ -1532,6 +1492,13 @@ $("#collapseAllBtn").onclick=()=>{
   renderSchedule();
 };
 $("#rulesBtn").onclick=openRules;
+$("#groupStandingsBtn").onclick=showGroupStandings;
+$("#ghToggle").onclick=()=>{
+  const body=$("#ghBody"), btn=$("#ghToggle");
+  const open=body.hasAttribute("hidden");
+  if(open){ body.removeAttribute("hidden"); btn.setAttribute("aria-expanded","true"); }
+  else { body.setAttribute("hidden",""); btn.setAttribute("aria-expanded","false"); }
+};
 
 window.closeSheet=closeSheet;
 
