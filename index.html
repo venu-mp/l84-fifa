@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
+  v33 · 2026-06-17 · Fixed freshline bug: "Scores not refreshed yet" showed even with valid recent results, because lastRefresh only tracked THIS session's own fetch, not the true last-known refresh from the activity log. Now seeded from STATE.log on init.
   v32 · 2026-06-17 · Auto-fetch on identity now conditional: only fires if last "refresh" log entry is 30+ min old (or none exists) — avoids redundant fetch when someone else just refreshed
   v31 · 2026-06-17 · Auto-fetch scores once on identity resolution (silent — no toasts); refreshScores(silent) param; fixed refreshBtn event-arg bug this introduced
   v30 · 2026-06-17 · Fixed sticky X button overlapping h2/sub text on long titles — reserved right-padding so text wraps clear of the button
@@ -1589,6 +1590,12 @@ async function serverClaimIdentity(name) {
     you:     data.me      || ((data.members||[])[0]||{}).id,
     lastRefresh: null
   };
+  // Seed lastRefresh from the activity log so the freshline reflects the true
+  // last-known-good refresh time, even if THIS session never personally
+  // triggered a fetch (e.g. someone else refreshed recently, or our 30-min
+  // staleness guard correctly skipped a redundant auto-fetch).
+  const seedRefreshEntry = STATE.log.find(e => e.type === "refresh");
+  if (seedRefreshEntry) STATE.lastRefresh = new Date(seedRefreshEntry.t).getTime();
 
   STATE.members.forEach(m => {
     m.name = m.name.replace(/^Dr\.?\s+/i, "");
@@ -1611,9 +1618,8 @@ async function serverClaimIdentity(name) {
   // the data actually looks stale (last real refresh was 30+ min ago, or
   // never happened). Avoids redundant fetches when someone else refreshed
   // moments ago. Silent: no toasts, since the user didn't ask for this.
-  const lastRefreshEntry = STATE.log.find(e => e.type === "refresh");
   const staleMs = 30 * 60 * 1000;
-  const isStale = !lastRefreshEntry || (Date.now() - new Date(lastRefreshEntry.t).getTime()) > staleMs;
+  const isStale = !seedRefreshEntry || (Date.now() - new Date(seedRefreshEntry.t).getTime()) > staleMs;
   if (isStale) refreshScores(true);
 })();
 
