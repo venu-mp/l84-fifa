@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
+  v32 · 2026-06-17 · Auto-fetch on identity now conditional: only fires if last "refresh" log entry is 30+ min old (or none exists) — avoids redundant fetch when someone else just refreshed
+  v31 · 2026-06-17 · Auto-fetch scores once on identity resolution (silent — no toasts); refreshScores(silent) param; fixed refreshBtn event-arg bug this introduced
+  v30 · 2026-06-17 · Fixed sticky X button overlapping h2/sub text on long titles — reserved right-padding so text wraps clear of the button
+  v29 · 2026-06-17 · Trimmed Group Standings subtitle to "Completed matches only"
   v28 · 2026-06-17 · Glossary separator fix (visible dimmed dot, hanging indent so wraps align under GP); 3-color column-header groups (GP/W/D/L blue, F/A/GD green, P gold)
   v27 · 2026-06-17 · Glossary: bold "Glossary:" prefix, dimmed separators (no italics, kept upright for legibility)
   v26 · 2026-06-17 · Modal X button: high-contrast inverted background (visible in light mode), nudged closer to right edge
@@ -343,8 +347,8 @@
   }
   .sheet.show{display:block}
   .grab{width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:8px auto 12px}
-  .sheet h2{font-size:16px;margin:0 0 2px}
-  .sheet .sub{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+  .sheet h2{font-size:16px;margin:0 0 2px;padding-right:56px}
+  .sheet .sub{font-size:11.5px;color:var(--muted);margin-bottom:14px;padding-right:56px}
   .closebtn{position:sticky;top:4px;left:100%;transform:translateX(-100%);margin-bottom:-44px;margin-right:-8px;
     background:var(--paper);border:1px solid var(--line);
     color:var(--surface);border-radius:10px;width:42px;height:42px;font-size:22px;cursor:pointer;z-index:8;display:block}
@@ -791,7 +795,7 @@ function showGroupStandings(){
   const gdCls = gd => gd>0?'gs-gdpos':(gd<0?'gs-neg':'gs-zero');
   const gdStr = gd => gd>0?`+${gd}`:`${gd}`;
   let body = `<h2>Group Standings</h2>
-    <div class="sub">Completed matches only · partial groups show partial results</div>
+    <div class="sub">Completed matches only</div>
     <div class="gs-gloss gs-gloss-top"><b>Glossary:</b> GP games <i class="gs-sep">·</i> W win <i class="gs-sep">·</i> D draw <i class="gs-sep">·</i> L loss <i class="gs-sep">·</i> F goals for <i class="gs-sep">·</i> A goals against <i class="gs-sep">·</i> GD goal difference <i class="gs-sep">·</i> P points</div>`;
   Object.keys(data).forEach(g=>{
     body += `<div class="gs-group">
@@ -1334,15 +1338,16 @@ function openPlayer(pid){
 }
 
 /* ---------- Refresh scores ---------- */
-function refreshScores(){
-  toast("Fetching live scores…");
+function refreshScores(silent){
+  if(!silent) toast("Fetching live scores…");
   serverRefreshScores().then(r => {
-    if(!r.ok){ toast("Score fetch failed: " + (r.error||"unknown")); return; }
+    if(!r.ok){ if(!silent) toast("Score fetch failed: " + (r.error||"unknown")); return; }
     STATE.results = Object.fromEntries(
       Object.entries(r.results).map(([k,v]) => [+k, v])
     );
     STATE.lastRefresh = Date.now();
-    renderAll(); toast(r.fromCache ? "Scores refreshed (cached)" : "Live scores updated ✓");
+    renderAll();
+    if(!silent) toast(r.fromCache ? "Scores refreshed (cached)" : "Live scores updated ✓");
   });
 }
 
@@ -1411,7 +1416,7 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   t.classList.add("active");
   $("#view-"+t.dataset.tab).classList.add("active");
 });
-$("#refreshBtn").onclick=refreshScores;
+$("#refreshBtn").onclick=()=>refreshScores();
 $("#addMemberBtn").onclick=addMember;
 /* ---------- Identity screen ---------- */
 function showIdentityScreen(canCancel){
@@ -1601,6 +1606,15 @@ async function serverClaimIdentity(name) {
     renderActing(); renderAll();
     showIdentityScreen(false);
   }
+
+  // Auto-fetch live scores once, now that identity is known — but only if
+  // the data actually looks stale (last real refresh was 30+ min ago, or
+  // never happened). Avoids redundant fetches when someone else refreshed
+  // moments ago. Silent: no toasts, since the user didn't ask for this.
+  const lastRefreshEntry = STATE.log.find(e => e.type === "refresh");
+  const staleMs = 30 * 60 * 1000;
+  const isStale = !lastRefreshEntry || (Date.now() - new Date(lastRefreshEntry.t).getTime()) > staleMs;
+  if (isStale) refreshScores(true);
 })();
 
 </script>
