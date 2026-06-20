@@ -1,6 +1,32 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
+  v59 · 2026-06-19 · Fixed real bug in Copy Recent Wagers: "(CURRENT)" suffix was showing unconditionally on every line, even when a match had only ONE record (nothing to disambiguate). Root cause: isLatestForMatch only checked "is this the last occurrence," with no check for whether more than one occurrence existed at all — trivially true for a single-record match. Fixed by adding matchEventCount > 1 as a required condition alongside isLatestForMatch. Verified via extracting and running the actual shipped function against the user's exact reported scenario (2 single-record matches, now correctly print with no suffix) plus regression checks for multi-record matches (suffix still correctly appears only on the true latest line) and a mixed case (one single + one multi-record match in the same copy, each handled correctly and independently).
+  v58 · 2026-06-19 · Activity tab: added simple All/Me filter toggle.
+  v57 · 2026-06-19 · Per-match copy button label changed "Copy all Wagers" → "Copy wagers for match".
+  v56 · 2026-06-19 · "Copy all Wagers": clipboard now bootstraps with the CURRENT match's state the instant openMatch() opens.
+  v55 · 2026-06-19 · "Copy all Wagers" (per-match modal): when a match has zero wagers, now clears the clipboard instead of writing a "0 wagers" summary block.
+  v54 · 2026-06-19 · Fixed Copy Recent Wagers button floating with a gap on the WRONG side.
+  v53 · 2026-06-19 · Match-detail modal wagers list: the predicted-score value (.wrow .pk, e.g. "2–1") now renders in blue (var(--blue)).
+  v52 · 2026-06-19 · Copy Recent Wagers FINAL design, locked: removed crwDedupedEvents() entirely — no dedup at all now. Every qualifying raw event prints as its own line (full provenance preserved — a match edited 3x shows all 3 entries). Only the TRUE latest record per match gets the "(CURRENT)" suffix (shortened from "(CURRENT wager)"), checked inline via findLast against the raw array rather than a separate Map (simpler, and at this feature's real scale — a handful of events per 3h sprint — the O(n²) cost is irrelevant). Suffix now applies consistently to deletes too (a "cleared (CURRENT)" line is correct when a clear is the latest action — earlier versions had inconsistent/buggy exemptions here). Closing line changed from "N wagers" to "N entries" since the count is now raw-event-count, not distinct-match-count. Verified by extracting and running the ACTUAL shipped function (not a reimplementation) against both locked mockup scenarios (score-change ending, delete ending) — output confirmed byte-for-byte correct.
+  v51 · 2026-06-19 · REVERTED v50's net-no-op suppression — it broke a real scenario: enter wager -> Copy Recent Wagers -> paste/declare in WhatsApp -> later delete the wager -> copy again.
+  v50 · 2026-06-19 · Copy Recent Wagers dedup (option A1, settled): added crwDedupedEvents() — collapses multiple same-session events on one match to just the latest, suffixed "(CURRENT wager)" only when something was actually superseded.
+  v49 · 2026-06-19 · Copy Recent Wagers polish: (1) button color changed blue→green (var(--green)) since blue already carries other semantics on this row/surface. (2) Fixed real layout bug: .acting-name had flex:1, which forces it to GROW and fill all leftover row space even for short names — creating an unwanted visible gap before "(not you?)" when the name is short. Changed to flex:0 1 auto (sizes to content by default; still SHRINKS under genuine pressure for long names, since all other row siblings are flex:none and thus never absorb the shrink). Net effect: short names no longer leave a gap mid-row; long names still truncate correctly at the row's true edge.
+  v48 · 2026-06-19 · Code.gs changes (3 queued fixes applied together): (1) saveWager/deleteWager now return `log` in their response — fixes the "Copy Recent Wagers button doesn't light up same-session" bug from v47. (2) saveWager's log type fixed from "create" to "new" for consistency (client already defensively accepts both, for backward compat with historical "create" rows). (3) refreshScores now diffs fetched results against existing Sheet contents before writing — skips clearContents/appendRow entirely if nothing changed; CACHE_TTL unchanged at 5min. NOTE: the "omit NN results loaded phrase when unchanged" half of the original design could NOT be fully implemented — the Log sheet has a fixed 11-column schema with no slot for a persisted "changed" flag, so historical Activity-tab entries still always show the phrase; the `changed` flag is only available in the live API response, not persisted. Flagging as a known design gap, not silently dropped. index.html: added defensive `if(r.log) STATE.log=r.log` to refreshScores's client handler too, matching the pattern already added to save/delete in v47.
+  v47 · 2026-06-18 · Built "Copy Recent Wagers" (admin-only per macro rule, NOT yet opened to all users): identity row redesigned ("Player:" label, "(not you?)" inline after name, name truncates first); new button shows only when acting player has qualifying wager activity (new/edit/delete) in past 3h, fixed window. Found+fixed 2 pre-existing client gaps while building: (1) saveWager/deleteWager success handlers never called renderActing(), so button visibility was stale until an unrelated re-render; (2) my filter checked for log type "new" but Code.gs actually writes "create" — fixed client-side to accept both, flagging here since the type-string mismatch is a real Code.gs inconsistency I did not touch. ALSO surfaced: Code.gs's saveWager/deleteWager never return updated `log` in their response — STATE.log won't reflect same-session wager events until Code.gs is patched to include it (added defensive `if(r.log) STATE.log=r.log` client-side, ready for when that's fixed, but the gap itself needs a Code.gs change — flagging for user decision, not made unilaterally).
+  v46 · 2026-06-18 · scorebig (the top matchup/result card, e.g. "France 3-1 Senegal · FULL-TIME") border changed from neutral grey to red, matching formcard/wlist — now all three sections of the match-detail modal share the same red-card treatment. lockbox (the amber "wagers locked, no result yet" state) deliberately left as-is since it's a different semantic (warning, not a content card).
+  v45 · 2026-06-18 · Fixed inconsistent spacing on past-match modal: the admin backfill button/form had no formcard wrapper at all (unlike the future-match entry form), so the gap before the wagers card was unstyled/default rather than the deliberate 14px — now wrapped in formcard for symmetric spacing in both states. Confirmed (no mobile media-query override exists) that the 14px gap applies identically on mobile.
+  v44 · 2026-06-18 · Wagers-list (wlist) now wrapped in the same red-bordered card style as the entry form (formcard) — symmetric, visually distinct sections in the match-detail modal. Removed lhdr's now-redundant top margin since the card itself provides padding.
+  v43 · 2026-06-18 · Match-detail modal: "Wagers placed: N" (now blue) and "Copy all Wagers" (icon removed, self-explanatory) combined into one row, label left / button right, fits comfortably on mobile (both are short single-line strings).
+  v42 · 2026-06-18 · Simplified per user feedback: (1a) Schedule-card reverted to single full-width "Enter a wager"/"View Wagers for Match" button, removed the Copy button there entirely (also removes the copy-button-with-0-wagers awkwardness). (1b) "Copy all Wagers" now lives ONLY in the match-detail modal, replacing the small 📋 icon with a proper full-width labeled button. (1c) Wager count moved adjacent to "Wagers placed:" label instead of right-justified. Fixed a malformed template-literal introduced mid-edit (caught via node --check before shipping).
+  v41 · 2026-06-18 · Enter-a-wager color changed AGAIN: teal #0E9F6E was too close to the green team-name text (RGB distance ~35, would read as same-color). Switched to var(--blue), ~125-130 distance from team green in both modes — clean separation, also reuses existing palette variable instead of a new hardcoded hex.
+  v40 · 2026-06-18 · Enter-a-wager color changed from bright red to teal-green #0E9F6E (better fits with green team names + neutral wager list). Renamed "Copy Wagers" → "Copy all Wagers" on the schedule-card row.
+  v39 · 2026-06-18 · Schedule-card peek: moved Enter-a-wager/Copy-Wagers button row to TOP (below city line, above player column header). Copy button now text "Copy Wagers" not icon. 60/40 width split (exact via calc, accounting for gap). Enter-a-wager now brand red (brighter/primary), Copy Wagers neutral/secondary.
+  v38 · 2026-06-18 · Added Copy-wagers (📋) to the Schedule-tab expanded card too (was missing — only existed in the match-detail sheet). Factored both into one shared copyMatchWagersToClipboard() to avoid duplication/drift. pk-cta button now shares its row with the new compact copy icon (38px) instead of full-width alone.
+  v37 · 2026-06-18 · Copy wagers for match: dropped stadium name, city only
+  v36 · 2026-06-18 · Added "Copy wagers for match" (📋) — available to everyone, not just admins, in the wagers-list header; copies match info + all current wagers as plain text for WhatsApp. Mobile-first spacing principle reaffirmed (compact but 34px tap-friendly button).
+  v35 · 2026-06-18 · Fixed Export button — exportCSV() existed but was never wired to #exportBtn (missing onclick binding)
+  v34 · 2026-06-18 · Fixed "?" refresher in Activity log: silent auto-fetch on load now requires data.me (real established identity), not just stale data — was firing while still on the identity-picker screen, logging by:"unknown"
   v33 · 2026-06-17 · Fixed freshline bug: "Scores not refreshed yet" showed even with valid recent results, because lastRefresh only tracked THIS session's own fetch, not the true last-known refresh from the activity log. Now seeded from STATE.log on init.
   v32 · 2026-06-17 · Auto-fetch on identity now conditional: only fires if last "refresh" log entry is 30+ min old (or none exists) — avoids redundant fetch when someone else just refreshed
   v31 · 2026-06-17 · Auto-fetch scores once on identity resolution (silent — no toasts); refreshScores(silent) param; fixed refreshBtn event-arg bug this introduced
@@ -105,9 +131,12 @@
   @media(prefers-color-scheme:dark){.actingrow.loading .acting-label{color:#ffb300!important}.actingrow.loading .acting-name{color:#ffd060!important}}
   .actingrow .acting-name{color:#0d3d30}
   @media(prefers-color-scheme:dark){.actingrow .acting-label{color:#5ecfb8}.actingrow .acting-name{color:#a8eede}}
-  .acting-label{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
-  .acting-name{font-size:14px;font-weight:750;flex:1;color:var(--paper)}
-  .acting-reset{font-size:10px;color:var(--blue);background:none;border:none;cursor:pointer;padding:2px 4px;font-family:var(--ui);font-weight:600}
+  .acting-label{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;flex:none}
+  .acting-name{font-size:14px;font-weight:750;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--paper)}
+  .acting-reset{font-size:10px;color:var(--blue);background:none;border:none;cursor:pointer;padding:2px 4px;font-family:var(--ui);font-weight:600;flex:none;white-space:nowrap}
+  .crw-btn{flex:none;white-space:nowrap;margin-left:auto;background:var(--green);color:#fff;border:none;border-radius:7px;
+    padding:7px 11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--ui)}
+  .crw-btn:active{opacity:.8}
 
   /* Full-screen identity picker */
   #idScreen{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center;padding:0}
@@ -133,6 +162,10 @@
   .view.active{display:block}
 
   .note{font-size:11.5px;color:var(--faint); margin:2px 2px 12px; line-height:1.5}
+  .logfilter-row{display:flex;align-items:center;gap:8px;margin:0 2px 14px;font-size:12px}
+  .logfilter-row label{color:var(--muted);font-weight:600}
+  .logfilter-row select{font-family:var(--ui);font-size:12.5px;font-weight:700;padding:6px 10px;
+    border-radius:7px;border:1px solid var(--line-2);background:var(--surface);color:var(--paper)}
   .segrow{display:flex; align-items:center; gap:6px; margin:0 2px 12px; flex-wrap:wrap}
   .segrow .lbl{font-size:11px;color:var(--muted);font-weight:700;margin-right:2px}
   .seg{background:var(--surface); border:1px solid var(--line-2); color:var(--muted);
@@ -169,7 +202,7 @@
     .whdr{font-size:12px!important}
     h2{font-size:22px!important}
     .sub{font-size:13px!important}
-    .wlist .lhdr{font-size:13px!important}
+    .lhdr-label{font-size:13px!important}
     .fld label{font-size:14px!important}
     .fld select,.fld input{font-size:16px!important}
     .btn{font-size:16px!important;padding:15px!important}
@@ -313,8 +346,8 @@
   .pk-row .pp{font-family:var(--mono);font-weight:800;font-size:13px;text-align:right}
   .pk-row .pp.win{color:var(--green)} .pk-row .pp.loss{color:var(--faint)} .pk-row .pp.pend{color:var(--amber)}
   .pk-empty{font-size:11.5px;color:var(--faint);padding:6px 2px}
-  .pk-cta{width:100%;margin-top:8px;background:var(--surface-2);border:1px solid var(--line-2);
-    color:var(--paper);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ui)}
+  .pk-cta{width:100%;margin-top:8px;background:var(--blue);border:1px solid var(--blue);
+    color:#fff;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ui)}
   .pk-cta:active{transform:translateY(1px)}
   .freshline{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin:-4px 2px 12px;display:flex;align-items:center;gap:6px}
   .freshline::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);flex:none}
@@ -356,7 +389,7 @@
   .closebtn:active{opacity:.7}
 
   .scorebig{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;
-    background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:14px 12px;margin-bottom:14px}
+    background:var(--surface-2);border:1.5px solid var(--red);border-radius:12px;padding:14px 12px;margin-bottom:14px}
   .scorebig .tn{font-size:14px;font-weight:700}
   .scorebig .tn.h{text-align:right}
   .scorebig .sc{font-family:var(--mono);font-size:26px;font-weight:800;letter-spacing:.06em;text-align:center}
@@ -371,6 +404,7 @@
   .fld select:focus, .fld input:focus{ outline:none; border-color:var(--red); }
   /* brighter card background for open (pre-kickoff) match entry form */
   .formcard{background:var(--surface);border:1.5px solid var(--red);border-radius:12px;padding:14px 12px;margin-bottom:14px}
+  .wlist{background:var(--surface);border:1.5px solid var(--red);border-radius:12px;padding:14px 12px;margin-bottom:14px}
   .scoreinputs{display:grid;grid-template-columns:1fr 28px 1fr;align-items:end;gap:8px}
   .scoreinputs .mid{text-align:center;font-family:var(--mono);color:var(--faint);padding-bottom:11px;font-size:16px}
   .scoreinputs input{text-align:center;font-family:var(--mono);font-size:20px;font-weight:800}
@@ -404,15 +438,20 @@
   #groupStandingsBtn{background:transparent;border:1.5px solid var(--blue);color:var(--blue);font-weight:700;position:relative}
   #groupStandingsBtn .gs-new{position:absolute;top:-7px;right:-6px;background:#FFB300;color:#1a1200;font-size:8px;font-weight:800;letter-spacing:.04em;padding:1px 5px;border-radius:8px;text-transform:uppercase;box-shadow:0 1px 4px rgba(255,179,0,.5)}
   #collapseAllBtn{background:var(--blue);border-color:transparent;color:#fff}
-  .wlist .lhdr{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);
-    font-weight:700;margin:14px 2px 4px;display:flex;justify-content:space-between}
+  .wlist .lhdr{margin:0 2px 10px}
+  .lhdr-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .lhdr-label{font-size:12px;font-weight:800;color:var(--blue);text-transform:none;letter-spacing:normal}
+  .wlist-copybtn{flex:none;width:auto;background:var(--surface-2);border:1px solid var(--line-2);
+    color:var(--paper);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;
+    cursor:pointer;font-family:var(--ui);white-space:nowrap}
+  .wlist-copybtn:active{background:var(--line-2)}
   .whdr{display:flex;justify-content:space-between;font-size:9px;text-transform:uppercase;
     letter-spacing:.08em;color:var(--faint);font-weight:700;padding:0 10px 6px;border-bottom:1px solid var(--line)}
   .wrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-bottom:1px solid var(--line);margin:0;position:relative}
   .wrow:last-child{border-bottom:none}
   .wrow .nm{flex:1;font-size:13px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wrow .by{font-size:10px;color:var(--faint);white-space:nowrap}
-  .wrow .pk{font-family:var(--mono);font-size:15px;font-weight:800;white-space:nowrap}
+  .wrow .pk{font-family:var(--mono);font-size:15px;font-weight:800;white-space:nowrap;color:var(--blue)}
   .wrow.mine{background:var(--green-dim)}
 
   .empty{text-align:center;color:var(--faint);font-size:12.5px;padding:24px 12px}
@@ -493,9 +532,10 @@
       <button class="iconbtn red" id="refreshBtn">↻ Scores</button>
     </div>
     <div class="actingrow" id="actingrow">
-      <span class="acting-label">Playing as</span>
+      <span class="acting-label">Player:</span>
       <span class="acting-name" id="actingName">—</span>
-      <button class="acting-reset" id="actingReset" title="Not you? Switch identity">not you?</button>
+      <button class="acting-reset" id="actingReset" title="Not you? Switch identity">(not you?)</button>
+      <button class="crw-btn" id="copyRecentWagersBtn" style="display:none">Copy Recent Wagers</button>
     </div>
     <div class="tabs">
       <button class="tab active" data-tab="schedule">Schedule</button>
@@ -540,6 +580,10 @@
 
   <div class="view" id="view-log">
     <div class="note">Every wager, edit, score refresh and result — permanent and in order. Backfilled (post-kickoff) entries are flagged.</div>
+    <div class="logfilter-row">
+      <label for="logFilterSel">Show:</label>
+      <select id="logFilterSel"><option value="all">All</option></select>
+    </div>
     <div id="logfeed"></div>
   </div>
 
@@ -685,7 +729,7 @@ function slotLabel(code){
 const ADMINS = ["Venu Nair","Augustine Chandy","Anil Parameswaran"];
 
 let STATE=null, acting=null;
-let TZSTATE="PDT", SORTBY="pts";
+let TZSTATE="PDT", SORTBY="pts", LOGFILTER="all";
 let dayState={};   // dateLabel -> "open" | "collapsed" (sticky within session)
 const TZS={ PDT:{label:"PDT", off:-420}, IST:{label:"IST", off:330} }; // minutes from UTC
 const _DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -831,7 +875,86 @@ function showGroupStandings(){
 function renderActing(){
   const el=$("#actingName");
   if(el) el.textContent = memberName(acting);
-  const al=$(".acting-label"); if(al) al.textContent = "Playing as";
+  const al=$(".acting-label"); if(al) al.textContent = "Player:";
+  updateCopyRecentWagersBtn();
+}
+
+/* ---------- Copy Recent Wagers (admin-only for now — see macro rule) ---------- */
+const CRW_WINDOW_MS = 3 * 60 * 60 * 1000; // fixed 3-hour lookback, no chain logic
+
+function crwQualifyingEvents(){
+  // All wager events (new/edit/delete) belonging to the acting player,
+  // timestamped within the last 3 hours. Chronological order (entry order).
+  const now = Date.now();
+  return STATE.log
+    .filter(e => (e.type==="create"||e.type==="new"||e.type==="edit"||e.type==="delete") && e.owner===acting)
+    .filter(e => (now - new Date(e.t).getTime()) <= CRW_WINDOW_MS)
+    .slice() // copy before reversing — STATE.log is newest-first
+    .reverse(); // oldest-first = entry order
+}
+
+function updateCopyRecentWagersBtn(){
+  const btn = $("#copyRecentWagersBtn");
+  if(!btn) return;
+  const isAdmin = ADMINS.includes(memberName(acting));
+  const events = crwQualifyingEvents();
+  // Macro rule: admin-only for now. Flag explicitly before this ever changes.
+  const show = isAdmin && events.length > 0;
+  btn.style.display = show ? "" : "none";
+}
+
+function crwFmtDateTime(ts){
+  const d = new Date(ts);
+  const day = String(d.getDate()).padStart(2,'0');
+  const mon = _MONS[d.getMonth()];
+  let h = d.getHours(), ampm = h>=12?'pm':'am'; h = h%12||12;
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return { dm:`${day}-${mon}`, time:`${h}:${mm}${ampm}` };
+}
+
+function copyRecentWagers(){
+  // No dedup — every qualifying raw event prints as its own line, preserving
+  // full provenance (e.g. a match edited 3 times shows all 3 entries). Only
+  // the TRUE LATEST record for a given match gets the "(CURRENT)" suffix,
+  // checked inline via findLast (fine at this feature's real scale — a
+  // handful of events per 3-hour sprint, not worth a separate Map setup).
+  const rawEvents = crwQualifyingEvents();
+  if(!rawEvents.length) return; // shouldn't happen if button correctly hidden
+  const tzLabel = TZS[TZSTATE].label;
+
+  // header range: TimeA = earliest qualifying event, TimeB = now.
+  // Always two dates, even same-day (deliberate KISS choice — no special-casing).
+  const first  = crwFmtDateTime(rawEvents[0].t);
+  const nowFmt = crwFmtDateTime(Date.now());
+
+  const lines = [`⚽ Recent wagers (${first.dm}, ${first.time} → ${nowFmt.dm}, ${nowFmt.time} ${tzLabel})`, ``];
+  rawEvents.forEach(e=>{
+    const m = elFor(e.mN);
+    const dm = crwFmtDateTime(e.t).dm;
+    // Suffix only means something when there's more than one record for
+    // this match — disambiguating "which of these is current." A match
+    // with exactly one entry has nothing to disambiguate, so it should
+    // print plain, with no suffix at all.
+    const matchEventCount = rawEvents.filter(x => x.mN === e.mN).length;
+    const isLatestForMatch = rawEvents.findLast(x => x.mN === e.mN) === e;
+    const suffix = (matchEventCount > 1 && isLatestForMatch) ? " (CURRENT)" : "";
+    if(!m){ lines.push(`${dm} · M${e.mN} → (match not found)${suffix}`); return; }
+    const match = `${m.a} v ${m.b}`;
+    lines.push(e.type==="delete" ? `${dm} · ${match} → cleared${suffix}` : `${dm} · ${match} → ${e.a}-${e.b}${suffix}`);
+  });
+  lines.push(`-----`);
+  lines.push(`${rawEvents.length} entries · ${memberName(acting)}`);
+  const txt = lines.join("\n");
+
+  navigator.clipboard.writeText(txt).then(()=>{
+    toast("Copied to clipboard ✓ — paste into WhatsApp");
+  }).catch(()=>{
+    const ta=document.createElement("textarea");
+    ta.value=txt; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy");
+    document.body.removeChild(ta);
+    toast("Copied to clipboard ✓ — paste into WhatsApp");
+  });
 }
 function renderLeaderboard(){
   const ranked=standings();
@@ -963,7 +1086,7 @@ function matchCardHTML(m, dd, rec){
         <div class="pp ${cls}">${ptTxt}${canEdit?'<span class="pk-edit-hint"> ✎</span>':''}</div>
       </div>`;
     }).join('') : `<div class="pk-empty">No wagers yet — be the first.</div>`
-  }<button class="pk-cta" data-open="${m.n}">${st==='open'?'Enter a wager':'View match'} →</button></div>`;
+  }<button class="pk-cta" data-open="${m.n}">${st==='open'?'Enter a wager':'View Wagers for Match'} →</button></div>`;
   return `<div class="match expandable status-${st}" data-match="${m.n}">
     <div class="m-top">${chip}<span class="m-meta">${dd.time} ${dd.tz} · Grp ${m.group} · M${m.n}</span></div>
     <div class="m-teams">
@@ -1057,6 +1180,8 @@ function renderSchedule(){
       if(pkRow){ e.stopPropagation(); openMatch(+pkRow.dataset.openMatch, pkRow.dataset.openOwner); return; }
       // pk-cta button: open match sheet (handled by data-open below)
       if(e.target.closest("[data-open]")) return;
+      // pk-copybtn: copy wagers for this match (handled by data-copy below)
+      if(e.target.closest("[data-copy]")) return;
       // anything inside the peek area (but not a row/button): don't collapse
       if(e.target.closest(".peek")) return;
       // header area: toggle
@@ -1064,10 +1189,27 @@ function renderSchedule(){
     };
   });
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=(e)=>{e.stopPropagation(); openMatch(+b.dataset.open);});
+  document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
+    copyMatchWagersToClipboard(+b.dataset.copy);
+  });
 }
 function renderLog(){
+  // Simple 2-option toggle: "All" vs the current acting user — not a full
+  // member-list dropdown, per explicit instruction to keep this minimal.
+  const sel = $("#logFilterSel");
+  if(sel){
+    sel.innerHTML = `<option value="all">All</option><option value="${acting}">${memberName(acting)}</option>`;
+    sel.value = LOGFILTER==="all" ? "all" : acting;
+  }
+
   if(!STATE.log.length){ $("#logfeed").innerHTML='<div class="empty">No activity yet.</div>'; return; }
-  const html = STATE.log.map(e=>{
+  // Filter applies ONLY to owner-bearing entries (wager new/edit/delete).
+  // System-level entries (refresh, member-added, result) have no owner and
+  // always stay visible regardless of filter — pool-wide context is useful
+  // no matter whose personal activity you're looking at.
+  const filtered = LOGFILTER==="all" ? STATE.log : STATE.log.filter(e => e.owner===undefined || e.owner===acting);
+  const html = filtered.map(e=>{
     if(e.type==="member"){
       return `<div class="logitem member"><div class="tl"><i></i></div><div class="logbody">
         <div class="logtext"><b>${memberName(e.by)}</b> added <b>${e.name}</b> to the pool</div>
@@ -1106,6 +1248,56 @@ function closeSheet(){ $("#sheet").classList.remove("show"); $("#scrim").classLi
 $("#scrim").onclick=closeSheet;
 
 /* ---------- Match sheet ---------- */
+// Shared by both the Schedule-card copy icon and the match-detail sheet's
+// copy icon — builds a plain-text summary (match info + all current wagers)
+// and copies it to the clipboard, for pasting into WhatsApp.
+// silent=true suppresses the toast — used for the automatic bootstrap-on-
+// modal-open (the user didn't explicitly ask to copy, so no need to tell
+// them something happened); silent=false/omitted is used by the actual
+// "Copy all Wagers" button tap, which should always confirm visibly.
+function copyMatchWagersToClipboard(n, silent){
+  const m=elFor(n); if(!m) return;
+  const wgs=STATE.wagers[n]||{}; const owners=Object.keys(wgs);
+
+  // No wagers for this match: clear the clipboard entirely rather than write
+  // a "0 wagers" summary — avoids leaving a misleading block, and ensures
+  // any dangling content from a PRIOR unrelated copy action doesn't survive
+  // (e.g. tapping Copy on an empty match right after copying a different
+  // match's real wagers shouldn't leave that earlier match's text behind).
+  if(!owners.length){
+    navigator.clipboard.writeText("").then(()=>{
+      if(!silent) toast("No wagers yet — clipboard cleared");
+    }).catch(()=>{
+      const ta=document.createElement("textarea");
+      ta.value=""; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy");
+      document.body.removeChild(ta);
+      if(!silent) toast("No wagers yet — clipboard cleared");
+    });
+    return;
+  }
+
+  const dd2=disp(m.koUTC);
+  const lines=[
+    `⚽ ${m.a} v ${m.b}`,
+    `${dd2.date} · ${dd2.time} ${dd2.tz} · Group ${m.group} · M${n}`,
+    `${m.city}`,
+    ``,
+    `${owners.length} wager${owners.length!==1?'s':''}:`
+  ];
+  owners.forEach(oid=>{ const w=wgs[oid]; lines.push(`${memberName(oid)}: ${w.a}-${w.b}`); });
+  const txt=lines.join("\n");
+  navigator.clipboard.writeText(txt).then(()=>{
+    if(!silent) toast("Copied to clipboard ✓ — paste into WhatsApp");
+  }).catch(()=>{
+    const ta=document.createElement("textarea");
+    ta.value=txt; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy");
+    document.body.removeChild(ta);
+    if(!silent) toast("Copied to clipboard ✓ — paste into WhatsApp");
+  });
+}
+
 function openMatch(n, preloadOwner){
   const m=elFor(n); const r=matchResult(n); const locked=isLocked(m);
   const wgs = STATE.wagers[n]||{};
@@ -1158,7 +1350,7 @@ function openMatch(n, preloadOwner){
       </div>
     </div>`;
   } else if(isAdmin){
-    form = `
+    form = `<div class="formcard">
       <div id="bfWrap" style="display:none">
         <div class="formrow">
           <div class="fld"><label>Whose wager (backfill)</label>
@@ -1173,12 +1365,13 @@ function openMatch(n, preloadOwner){
         <button class="btn" id="saveWager">Save backfill wager</button>
         <div class="note" style="margin-top:10px">Backfilled wagers are flagged in the activity log. Only for picks genuinely made before kickoff.</div>
       </div>
-      <button class="btn ghost" id="bfToggle">+ Backfill a wager (admin only)</button>`;
+      <button class="btn ghost" id="bfToggle">+ Backfill a wager (admin only)</button>
+    </div>`;
   }
 
   // existing wagers list
   let list = `<div class="wlist">
-    <div class="lhdr"><span>Wagers placed</span><span>${owners.length}</span></div>
+    <div class="lhdr lhdr-row"><span class="lhdr-label">Wagers placed: ${owners.length}</span><button class="wlist-copybtn" id="copyMatchWagers">Copy wagers for match</button></div>
     ${owners.length?`<div class="whdr"><span>Player</span><span>Predicted</span></div>`:''}`;
   if(!owners.length){ list+=`<div class="empty" style="padding:14px">No wagers yet. Be the first.</div>`; }
   else {
@@ -1199,6 +1392,12 @@ function openMatch(n, preloadOwner){
   list+=`</div><div style="height:24px"></div>`;
 
   openSheet(head+scoreBlk+form+list);
+  // Bootstrap the clipboard with THIS match's current state the instant the
+  // modal opens — not just when "Copy all Wagers" is explicitly tapped.
+  // Ensures no dangling clipboard content survives from a previously-opened,
+  // unrelated match; opening any match always reflects its real current
+  // wagers (or clears the clipboard if there are none) immediately.
+  copyMatchWagersToClipboard(n, true);
   // Admin: tap any wager row to load it into the form
   document.querySelectorAll("[data-tapowner]").forEach(row=>row.onclick=()=>{
     const oid = row.dataset.tapowner;
@@ -1238,8 +1437,9 @@ function openMatch(n, preloadOwner){
       const r = await api("delete", { token: TOKEN, matchN: n, ownerId: oid });
       if(!r.ok){ toast("Error: "+(r.error||"unknown"), 4000); return; }
       if(r.wagers) STATE.wagers = mergeWagers(r.wagers);
+      if(r.log) STATE.log = r.log;
       toast("Wager removed");
-      renderAll(); openMatch(n); // re-render so the row disappears
+      renderAll(); renderActing(); openMatch(n); // re-render so the row disappears
       return;
     }
     const A=$("#scA"), B=$("#scB"), btn=$("#saveWager");
@@ -1258,6 +1458,10 @@ function openMatch(n, preloadOwner){
       if(btn) btn.textContent = ow ? 'Update wager' : 'Save wager';
     };
   }
+  // Copy wagers for match — plain-text summary for pasting into WhatsApp.
+  // Available to anyone (read-only action, no admin gating needed).
+  const cpw=$("#copyMatchWagers");
+  if(cpw) cpw.onclick=()=>copyMatchWagersToClipboard(n);
   const bft=$("#bfToggle");
   if(bft) bft.onclick=()=>{ $("#bfWrap").style.display="block"; bft.style.display="none"; const os=$("#ownerSel"); if(os) os.value=acting; const s=$("#saveWager"); if(s) s.onclick=()=>saveWager(n, locked); };
 }
@@ -1271,8 +1475,9 @@ function saveWager(n, locked){
     if(!r.ok){ toast("Error: " + (r.error||"unknown")); return; }
     // merge server wagers into STATE
     if(r.wagers) STATE.wagers = mergeWagers(r.wagers);
+    if(r.log) STATE.log = r.log;
     toast(isProxy ? `Saved for ${memberName(ownerId)} — logged` : "Wager saved");
-    renderAll(); openMatch(n);
+    renderAll(); renderActing(); openMatch(n);
   });
 }
 
@@ -1346,6 +1551,7 @@ function refreshScores(silent){
     STATE.results = Object.fromEntries(
       Object.entries(r.results).map(([k,v]) => [+k, v])
     );
+    if(r.log) STATE.log = r.log;
     STATE.lastRefresh = Date.now();
     renderAll();
     if(!silent) toast(r.fromCache ? "Scores refreshed (cached)" : "Live scores updated ✓");
@@ -1418,6 +1624,7 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   $("#view-"+t.dataset.tab).classList.add("active");
 });
 $("#refreshBtn").onclick=()=>refreshScores();
+$("#exportBtn").onclick=exportCSV;
 $("#addMemberBtn").onclick=addMember;
 /* ---------- Identity screen ---------- */
 function showIdentityScreen(canCancel){
@@ -1486,6 +1693,8 @@ $("#actingReset").onclick=async()=>{
   // it will be overwritten once a new name is chosen
   showIdentityScreen(true);
 };
+$("#copyRecentWagersBtn").onclick=copyRecentWagers;
+$("#logFilterSel").onchange=(e)=>{ LOGFILTER = e.target.value; renderLog(); };
 document.querySelectorAll("[data-tz]").forEach(b=>b.onclick=()=>{
   TZSTATE=b.dataset.tz;
   document.querySelectorAll("[data-tz]").forEach(x=>x.classList.toggle("active", x===b));
@@ -1615,12 +1824,15 @@ async function serverClaimIdentity(name) {
   }
 
   // Auto-fetch live scores once, now that identity is known — but only if
-  // the data actually looks stale (last real refresh was 30+ min ago, or
-  // never happened). Avoids redundant fetches when someone else refreshed
-  // moments ago. Silent: no toasts, since the user didn't ask for this.
+  // (a) identity is ACTUALLY established (data.me present — not the picker
+  // screen, which has no real identity yet), and (b) the data actually looks
+  // stale (last real refresh was 30+ min ago, or never happened). Avoids
+  // redundant fetches when someone else refreshed moments ago, and avoids
+  // logging "unknown" refreshers when nobody's identity has resolved yet.
+  // Silent: no toasts, since the user didn't ask for this.
   const staleMs = 30 * 60 * 1000;
   const isStale = !seedRefreshEntry || (Date.now() - new Date(seedRefreshEntry.t).getTime()) > staleMs;
-  if (isStale) refreshScores(true);
+  if (data.me && isStale) refreshScores(true);
 })();
 
 </script>
