@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
-  v62 · 2026-06-19 · Copy Recent Wagers: added 3 spaces on either side of "v" too (was single-spaced) — format now "<flag> CODE   v   <flag> CODE →   score", 3 spaces around v AND after the arrow. Verified exact spacing via JSON.stringify of the real shipped function's output.
+  v63 · 2026-06-19 · Copy Recent Wagers display restructured per exact spec: header now "⚽ [Name]'s recent wagers" + italicized date-range on its own line (*DD-Mon, time → DD-Mon, time TZ*), footer (-----  and "N entries · Name") removed entirely, blank line inserted between every wager row (not just after header). Verified end-to-end via running the real shipped function — output matches the user's exact sample structure.
+  v62 · 2026-06-19 · Copy Recent Wagers: added 3 spaces on either side of "v" too.
   v61 · 2026-06-19 · Copy Recent Wagers further simplified: removed per-line date prefix entirely.
   v60 · 2026-06-19 · Country abbreviations added, per locked design.
   v59 · 2026-06-19 · Fixed real bug in Copy Recent Wagers: "(CURRENT)" suffix was showing unconditionally on every line.
@@ -931,8 +932,12 @@ function copyRecentWagers(){
   const first  = crwFmtDateTime(rawEvents[0].t);
   const nowFmt = crwFmtDateTime(Date.now());
 
-  const lines = [`⚽ Recent wagers (${first.dm}, ${first.time} → ${nowFmt.dm}, ${nowFmt.time} ${tzLabel})`, ``];
-  rawEvents.forEach(e=>{
+  const lines = [
+    `⚽ ${memberName(acting)}'s recent wagers`,
+    `*${first.dm}, ${first.time} → ${nowFmt.dm}, ${nowFmt.time} ${tzLabel}*`,
+    ``
+  ];
+  rawEvents.forEach((e, idx)=>{
     const m = elFor(e.mN);
     // Suffix only means something when there's more than one record for
     // this match — disambiguating "which of these is current." A match
@@ -941,6 +946,7 @@ function copyRecentWagers(){
     const matchEventCount = rawEvents.filter(x => x.mN === e.mN).length;
     const isLatestForMatch = rawEvents.findLast(x => x.mN === e.mN) === e;
     const suffix = (matchEventCount > 1 && isLatestForMatch) ? " (CURRENT)" : "";
+    if(idx > 0) lines.push(``); // blank line between every wager row
     if(!m){ lines.push(`M${e.mN} →   (match not found)${suffix}`); return; }
     // Abbreviated matchup — flag + 3-letter code, no full country name —
     // to avoid long lines wrapping when pasted into WhatsApp on mobile.
@@ -949,8 +955,6 @@ function copyRecentWagers(){
     const match = `${teamFlag(m.a)} ${teamCode(m.a)}   v   ${teamFlag(m.b)} ${teamCode(m.b)}`;
     lines.push(e.type==="delete" ? `${match} →   cleared${suffix}` : `${match} →   ${e.a}-${e.b}${suffix}`);
   });
-  lines.push(`-----`);
-  lines.push(`${rawEvents.length} entries · ${memberName(acting)}`);
   const txt = lines.join("\n");
 
   navigator.clipboard.writeText(txt).then(()=>{
