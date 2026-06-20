@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
-  v59 · 2026-06-19 · Fixed real bug in Copy Recent Wagers: "(CURRENT)" suffix was showing unconditionally on every line, even when a match had only ONE record (nothing to disambiguate). Root cause: isLatestForMatch only checked "is this the last occurrence," with no check for whether more than one occurrence existed at all — trivially true for a single-record match. Fixed by adding matchEventCount > 1 as a required condition alongside isLatestForMatch. Verified via extracting and running the actual shipped function against the user's exact reported scenario (2 single-record matches, now correctly print with no suffix) plus regression checks for multi-record matches (suffix still correctly appears only on the true latest line) and a mixed case (one single + one multi-record match in the same copy, each handled correctly and independently).
+  v62 · 2026-06-19 · Copy Recent Wagers: added 3 spaces on either side of "v" too (was single-spaced) — format now "<flag> CODE   v   <flag> CODE →   score", 3 spaces around v AND after the arrow. Verified exact spacing via JSON.stringify of the real shipped function's output.
+  v61 · 2026-06-19 · Copy Recent Wagers further simplified: removed per-line date prefix entirely.
+  v60 · 2026-06-19 · Country abbreviations added, per locked design.
+  v59 · 2026-06-19 · Fixed real bug in Copy Recent Wagers: "(CURRENT)" suffix was showing unconditionally on every line.
   v58 · 2026-06-19 · Activity tab: added simple All/Me filter toggle.
   v57 · 2026-06-19 · Per-match copy button label changed "Copy all Wagers" → "Copy wagers for match".
   v56 · 2026-06-19 · "Copy all Wagers": clipboard now bootstraps with the CURRENT match's state the instant openMatch() opens.
@@ -313,6 +316,7 @@
   .m-meta{font-size:10.5px; color:var(--faint); font-family:var(--mono); margin-left:auto; text-align:right; white-space:nowrap}
   .m-teams{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px}
   .t-name{font-size:13.5px; font-weight:650}
+  .t-code{font-size:11px;font-weight:600;color:var(--faint)}
   .t-name.home{text-align:right}
   .t-name.away{text-align:left}
   .match.status-open .t-name{color:var(--green)}
@@ -930,7 +934,6 @@ function copyRecentWagers(){
   const lines = [`⚽ Recent wagers (${first.dm}, ${first.time} → ${nowFmt.dm}, ${nowFmt.time} ${tzLabel})`, ``];
   rawEvents.forEach(e=>{
     const m = elFor(e.mN);
-    const dm = crwFmtDateTime(e.t).dm;
     // Suffix only means something when there's more than one record for
     // this match — disambiguating "which of these is current." A match
     // with exactly one entry has nothing to disambiguate, so it should
@@ -938,9 +941,13 @@ function copyRecentWagers(){
     const matchEventCount = rawEvents.filter(x => x.mN === e.mN).length;
     const isLatestForMatch = rawEvents.findLast(x => x.mN === e.mN) === e;
     const suffix = (matchEventCount > 1 && isLatestForMatch) ? " (CURRENT)" : "";
-    if(!m){ lines.push(`${dm} · M${e.mN} → (match not found)${suffix}`); return; }
-    const match = `${m.a} v ${m.b}`;
-    lines.push(e.type==="delete" ? `${dm} · ${match} → cleared${suffix}` : `${dm} · ${match} → ${e.a}-${e.b}${suffix}`);
+    if(!m){ lines.push(`M${e.mN} →   (match not found)${suffix}`); return; }
+    // Abbreviated matchup — flag + 3-letter code, no full country name —
+    // to avoid long lines wrapping when pasted into WhatsApp on mobile.
+    // No date prefix: within this single 3-hour-window copy, matchups are
+    // unique, so a per-line date adds no disambiguating value.
+    const match = `${teamFlag(m.a)} ${teamCode(m.a)}   v   ${teamFlag(m.b)} ${teamCode(m.b)}`;
+    lines.push(e.type==="delete" ? `${match} →   cleared${suffix}` : `${match} →   ${e.a}-${e.b}${suffix}`);
   });
   lines.push(`-----`);
   lines.push(`${rawEvents.length} entries · ${memberName(acting)}`);
@@ -1090,7 +1097,7 @@ function matchCardHTML(m, dd, rec){
   return `<div class="match expandable status-${st}" data-match="${m.n}">
     <div class="m-top">${chip}<span class="m-meta">${dd.time} ${dd.tz} · Grp ${m.group} · M${m.n}</span></div>
     <div class="m-teams">
-      <div class="t-name home">${m.a}</div>${mid}<div class="t-name away">${m.b}</div>
+      <div class="t-name home">${teamFlag(m.a)} ${m.a} <span class="t-code">(${teamCode(m.a)})</span></div>${mid}<div class="t-name away">${teamFlag(m.b)} ${m.b} <span class="t-code">(${teamCode(m.b)})</span></div>
     </div>
     <div class="m-foot">${m.city}<span class="dot"></span>${wc?`<span class="wcount">${wc} wager${wc!==1?'s':''}</span>`:'<span style="color:var(--faint)">No wagers yet</span>'}<span class="caret">▾</span></div>
     ${peek}
