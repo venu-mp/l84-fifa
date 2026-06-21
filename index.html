@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
-  v63 · 2026-06-19 · Copy Recent Wagers display restructured per exact spec: header now "⚽ [Name]'s recent wagers" + italicized date-range on its own line (*DD-Mon, time → DD-Mon, time TZ*), footer (-----  and "N entries · Name") removed entirely, blank line inserted between every wager row (not just after header). Verified end-to-end via running the real shipped function — output matches the user's exact sample structure.
+  v69 · 2026-06-20 · Diagnostic-only follow-up to v68's add-member fix (root cause of "Save does nothing visible" not yet found — deferred, not fixed this round, per explicit instruction to stop debugging and just confirm deploy-safety). addMember()'s save handler now: wraps the api() call in try/catch, console.logs the raw response, and uses alert() (not just toast()) for any failure path — a blocking native dialog can't silently fail to render the way a CSS-transitioned toast theoretically could if a slow Sheets round-trip outlasted the original "Adding member…" toast's duration. Purely additive to the success path (still calls the same real api("addMember",...) from v68, same STATE.members rebuild) — cannot make a currently-broken case more broken, only makes failures louder/more diagnosable for next time.
+  v68 · 2026-06-20 · Fixed broken "+ Add member" (Participants tab).
+  v67 · 2026-06-20 · CORRECTNESS REVIEW of Copy Recent Wagers.
+  v66 · 2026-06-20 · Option F implemented: "Player:" label now hidden once identity is genuinely confirmed.
+  v65 · 2026-06-20 · Real fix for button thickness.
+  v64 · 2026-06-20 · (1) Fixed Copy Recent Wagers button being noticeably thinner than Collapse-all on real mobile devices. (2) Moved the "NEW" amber badge from Group Standings to Copy Recent Wagers.
+  v63 · 2026-06-19 · Copy Recent Wagers display restructured per exact spec.
   v62 · 2026-06-19 · Copy Recent Wagers: added 3 spaces on either side of "v" too.
   v61 · 2026-06-19 · Copy Recent Wagers further simplified: removed per-line date prefix entirely.
   v60 · 2026-06-19 · Country abbreviations added, per locked design.
@@ -138,7 +144,7 @@
   .acting-label{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;flex:none}
   .acting-name{font-size:14px;font-weight:750;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--paper)}
   .acting-reset{font-size:10px;color:var(--blue);background:none;border:none;cursor:pointer;padding:2px 4px;font-family:var(--ui);font-weight:600;flex:none;white-space:nowrap}
-  .crw-btn{flex:none;white-space:nowrap;margin-left:auto;background:var(--green);color:#fff;border:none;border-radius:7px;
+  .crw-btn{flex:none;white-space:nowrap;margin-left:auto;background:var(--green);color:#fff;border:none;border-radius:7px;position:relative;
     padding:7px 11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--ui)}
   .crw-btn:active{opacity:.8}
 
@@ -192,7 +198,9 @@
     .pmeta{font-size:10px!important}
     .rank{font-size:14px!important}
     .tab{font-size:15px!important;padding:12px 4px!important}
-    .seg{font-size:13.5px!important;padding:9px 14px!important}
+    .seg{font-size:14px!important;padding:13px 16px!important}
+    .crw-btn{font-size:14px!important;padding:13px 16px!important}
+    .actingrow{padding:14px 12px!important}
     .dayhdr .d{font-size:15px!important}
     .daysummary{font-size:12px!important}
     .note{font-size:14px!important}
@@ -441,7 +449,7 @@
   .collapse-bar{display:flex;justify-content:flex-end;align-items:center;margin:-6px 2px 8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
   .collapse-bar.gs-bar{justify-content:space-between}
   #groupStandingsBtn{background:transparent;border:1.5px solid var(--blue);color:var(--blue);font-weight:700;position:relative}
-  #groupStandingsBtn .gs-new{position:absolute;top:-7px;right:-6px;background:#FFB300;color:#1a1200;font-size:8px;font-weight:800;letter-spacing:.04em;padding:1px 5px;border-radius:8px;text-transform:uppercase;box-shadow:0 1px 4px rgba(255,179,0,.5)}
+  .gs-new{position:absolute;top:-7px;right:-6px;background:#FFB300;color:#1a1200;font-size:8px;font-weight:800;letter-spacing:.04em;padding:1px 5px;border-radius:8px;text-transform:uppercase;box-shadow:0 1px 4px rgba(255,179,0,.5)}
   #collapseAllBtn{background:var(--blue);border-color:transparent;color:#fff}
   .wlist .lhdr{margin:0 2px 10px}
   .lhdr-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -540,7 +548,7 @@
       <span class="acting-label">Player:</span>
       <span class="acting-name" id="actingName">—</span>
       <button class="acting-reset" id="actingReset" title="Not you? Switch identity">(not you?)</button>
-      <button class="crw-btn" id="copyRecentWagersBtn" style="display:none">Copy Recent Wagers</button>
+      <button class="crw-btn" id="copyRecentWagersBtn" style="display:none"><span class="gs-new">new</span>Copy Recent Wagers</button>
     </div>
     <div class="tabs">
       <button class="tab active" data-tab="schedule">Schedule</button>
@@ -566,7 +574,7 @@
       </ul>
     </div>
     <div class="collapse-bar gs-bar">
-      <button class="seg" id="groupStandingsBtn"><span class="gs-new">new</span>📊 Group Standings</button>
+      <button class="seg" id="groupStandingsBtn">📊 Group Standings</button>
       <button class="seg" id="collapseAllBtn">Collapse all</button>
     </div>
     <div id="schedule"></div>
@@ -734,7 +742,7 @@ function slotLabel(code){
 const ADMINS = ["Venu Nair","Augustine Chandy","Anil Parameswaran"];
 
 let STATE=null, acting=null;
-let TZSTATE="PDT", SORTBY="pts", LOGFILTER="all";
+let TZSTATE="PDT", SORTBY="pts", LOGFILTER="all", IDENTITY_CONFIRMED=false;
 let dayState={};   // dateLabel -> "open" | "collapsed" (sticky within session)
 const TZS={ PDT:{label:"PDT", off:-420}, IST:{label:"IST", off:330} }; // minutes from UTC
 const _DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -880,7 +888,15 @@ function showGroupStandings(){
 function renderActing(){
   const el=$("#actingName");
   if(el) el.textContent = memberName(acting);
-  const al=$(".acting-label"); if(al) al.textContent = "Player:";
+  const al=$(".acting-label");
+  if(al){
+    if(IDENTITY_CONFIRMED){
+      al.style.display = "none"; // steady state: label's job is done, give the name more room
+    } else {
+      al.style.display = "";
+      al.textContent = "Player:";
+    }
+  }
   updateCopyRecentWagersBtn();
 }
 
@@ -909,11 +925,16 @@ function updateCopyRecentWagersBtn(){
 }
 
 function crwFmtDateTime(ts){
-  const d = new Date(ts);
-  const day = String(d.getDate()).padStart(2,'0');
-  const mon = _MONS[d.getMonth()];
-  let h = d.getHours(), ampm = h>=12?'pm':'am'; h = h%12||12;
-  const mm = String(d.getMinutes()).padStart(2,'0');
+  // Must use the app's SELECTED timezone (TZSTATE), not the device's own
+  // local timezone — getHours()/getMinutes() on a bare Date object reads
+  // device-local time, which can silently diverge from the tzLabel this
+  // value gets displayed next to. Mirrors disp()'s correct technique:
+  // apply the offset manually, then read UTC fields.
+  const d = new Date(new Date(ts).getTime() + TZS[TZSTATE].off*60000);
+  const day = String(d.getUTCDate()).padStart(2,'0');
+  const mon = _MONS[d.getUTCMonth()];
+  let h = d.getUTCHours(), ampm = h>=12?'pm':'am'; h = h%12||12;
+  const mm = String(d.getUTCMinutes()).padStart(2,'0');
   return { dm:`${day}-${mon}`, time:`${h}:${mm}${ampm}` };
 }
 
@@ -1571,19 +1592,37 @@ function refreshScores(silent){
 
 /* ---------- Add member ---------- */
 function addMember(){
-  openSheet(`<h2>Add member</h2><div class="sub">Anyone can add a player. The addition is logged.</div>
+  if(!ADMINS.includes(memberName(acting))){
+    toast("Only admins can add new members", 3000);
+    return;
+  }
+  openSheet(`<h2>Add member</h2><div class="sub">Admin only. The addition is logged.</div>
     <div class="fld"><label>Name</label><input id="newName" type="text" placeholder="Full name"></div>
     <div style="height:12px"></div>
     <button class="btn" id="doAdd">Add to pool</button>`);
   $("#newName").focus();
-  $("#doAdd").onclick=()=>{
+  $("#doAdd").onclick=async()=>{
     const nm=$("#newName").value.trim();
     if(!nm){ toast("Enter a name"); return; }
     if(STATE.members.some(m=>m.name.toLowerCase()===nm.toLowerCase())){ toast("That name already exists"); return; }
-    const id="m"+Date.now();
-    STATE.members.push({id,name:nm});
-    STATE.log.unshift({t:Date.now(),type:"member",name:nm,by:acting});
-    persist(); renderActing(); renderAll(); closeSheet(); toast(`Added ${nm}`);
+    toast("Adding member…", 8000); // longer duration so a slow Sheets round-trip can't outlast it
+    let r;
+    try {
+      r = await api("addMember", { token: TOKEN||"", name: nm });
+    } catch(e) {
+      console.error("addMember threw:", e);
+      alert("Add member failed (network/script error): " + (e.message||e));
+      return;
+    }
+    console.log("addMember response:", r);
+    if(!r || !r.ok){
+      const errMsg = (r && r.error) || "unknown error — check console";
+      console.error("addMember rejected:", r);
+      alert("Add member failed: " + errMsg); // alert() can't silently fail to render, unlike a CSS toast
+      return;
+    }
+    STATE.members = (r.members||[]).map(m=>({id:m.id,name:m.name}));
+    renderActing(); renderAll(); closeSheet(); toast(`Added ${nm}`);
   };
 }
 
@@ -1658,6 +1697,7 @@ function showIdentityScreen(canCancel){
     TOKEN = r.token;
     acting = r.id;
     Session.set("l84_token", TOKEN);
+    IDENTITY_CONFIRMED = true;
     screen.style.display="none";
     renderActing(); renderAll();
   });
@@ -1826,10 +1866,12 @@ async function serverClaimIdentity(name) {
   if (data.me) {
     acting = data.me;
     dayState = {};
+    IDENTITY_CONFIRMED = true;
     renderActing(); renderAll();
   } else {
     acting = STATE.you;
     dayState = {};
+    IDENTITY_CONFIRMED = false;
     renderActing(); renderAll();
     showIdentityScreen(false);
   }
