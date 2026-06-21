@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
-  v72 · 2026-06-20 · Double-tap protection for Save/Clear wager. With 10+ users now wagering concurrently, a fast double-tap could issue two overlapping requests, both reading "row doesn't exist yet" before either write completes — real duplicate-row risk (round-trip latency, ~1-3s, is much slower than typical double-tap timing, so this isn't a remote edge case). Added SAVE_IN_FLIGHT flag, shared across BOTH saveWager() and the clear/delete handler (deliberately shared, not separate flags — both write to the same (matchN,ownerId) row, so Save-then-Clear-while-pending is the same race category as Save-then-Save). Button disabled visually during the in-flight request too. Reset guaranteed on every exit path (success/server-rejected/network-error) via .finally()/try-finally, specifically to avoid the button getting stuck disabled after a single failure. index.html only — no Code.gs change, since the fix works by preventing the second request from ever being SENT, not by the server reconciling duplicates after the fact. Verified the shared-flag cross-blocking behavior via simulation.
+  v75 · 2026-06-21 · Simplified per user feedback: removed the "✎ Edit" pill from BOTH surfaces (match-detail modal's wrow, Schedule-card's pk-row) — row tint alone is adequate signal, the pill was extra visual clutter, and it never fit naturally into pk-row's narrow 4-column grid layout anyway. Also caught and fixed: pk-row's editable rows previously had NO persistent tint at all (only an :active press-state) — they were still relying entirely on the old, genuinely-too-small 9px pk-edit-hint character, which is exactly the visibility problem this whole thread was trying to solve. Added a proper persistent green-dim tint to pk-row.pk-editable, matching wrow's treatment, and removed the now-fully-orphaned pk-edit-hint/wrow-editbtn CSS rules (confirmed zero remaining markup references to either before removing).
+  v74 · 2026-06-20 · Made editable wager rows in the match-detail modal more visually obvious.
+  v73 · 2026-06-20 · Match-detail modal wager rows now tappable for self-edit by non-admins too.
+  v72 · 2026-06-20 · Double-tap protection for Save/Clear wager.
   v71 · 2026-06-20 · REVIEW caught a real security gap introduced by v70.
   v70 · 2026-06-20 · MACRO RULE EXECUTED: wager entry opened to ALL users.
   v69 · 2026-06-20 · Diagnostic-only follow-up to v68's add-member fix.
@@ -350,8 +353,8 @@
   .pk-row:last-of-type{border-bottom:none}
   .admin-badge{font-size:9px;font-weight:800;color:var(--red);background:rgba(226,59,64,.12);border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:middle;text-transform:uppercase;letter-spacing:.05em}
   .id-admin-tag{font-size:10px;color:var(--red);font-weight:800}
+  .pk-row.pk-editable{background:var(--green-dim)}
   .pk-row.pk-editable:active{background:var(--surface-2)}
-  .pk-edit-hint{font-size:9px;color:var(--blue);margin-left:2px}
   .pk-row .who{min-width:0}
   .pk-row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pk-row .sub2{font-size:10px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -468,7 +471,7 @@
   .wrow .nm{flex:1;font-size:13px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wrow .by{font-size:10px;color:var(--faint);white-space:nowrap}
   .wrow .pk{font-family:var(--mono);font-size:15px;font-weight:800;white-space:nowrap;color:var(--blue)}
-  .wrow.mine{background:var(--green-dim)}
+  .wrow.editable{background:var(--green-dim)}
 
   .empty{text-align:center;color:var(--faint);font-size:12.5px;padding:24px 12px}
 
@@ -1113,11 +1116,16 @@ function matchCardHTML(m, dd, rec){
       const rc = rec[oid]||{w:0,l:0};
       const extra = (w.by!==oid?` · by ${memberName(w.by)}`:'')+(w.backfill?' · backfill':'');
       const canEdit = !isLocked(m) && (isAdmin || oid===acting);
+      // Same design as the match-detail modal's wrow (v74): row tint +
+      // prominent pill, not just a tiny 9px hint character. pk-row is a
+      // 4-column grid with very narrow trailing columns (26px/28px) — no
+      // room there for "✎ Edit" text, so the pill goes inline in the wide
+      // first column (.who), next to the name, instead of the old .pp slot.
       return `<div class="pk-row${canEdit?' pk-editable':''}"${canEdit?` data-open-owner="${oid}" data-open-match="${m.n}"`:''}">
         <div class="who"><div class="nm">${memberName(oid)}</div><div class="sub2">record <span class="recw">${rc.w}</span>–<span class="recl">${rc.l}</span>${extra}</div></div>
         <div class="pkk">${w.a}–${w.b}</div>
         <div class="wlc ${cls}">${wl}</div>
-        <div class="pp ${cls}">${ptTxt}${canEdit?'<span class="pk-edit-hint"> ✎</span>':''}</div>
+        <div class="pp ${cls}">${ptTxt}</div>
       </div>`;
     }).join('') : `<div class="pk-empty">No wagers yet — be the first.</div>`
   }<button class="pk-cta" data-open="${m.n}">${st==='open'?'Enter a wager':'View Wagers for Match'} →</button></div>`;
@@ -1418,14 +1426,26 @@ function openMatch(n, preloadOwner){
     list += owners.map(oid=>{
       const w=wgs[oid];
       const extra=(w.by!==oid?` · proxy: ${memberName(w.by)}`:'')+(w.backfill?' · backfill':'');
-      const mine = oid===acting?' mine':'';
       const isAdmin = ADMINS.includes(memberName(acting));
-      const tappable = !locked && isAdmin ? ` data-tapowner="${oid}"` : '';
-      const tapHint = !locked && isAdmin ? ' style="cursor:pointer"' : '';
-      return `<div class="wrow${mine}"${tappable}${tapHint}>
+      // Matches the Schedule-card's pk-row pattern exactly: admins can tap
+      // any row (proxy-edit), non-admins can only tap their OWN row. A row
+      // that's neither tappable nor visually hinted is plain inert text —
+      // no error-handling needed for an accidental tap on someone else's
+      // row, since there's nothing wired to catch it in the first place.
+      //
+      // Row tint now driven by canEdit, not "is this my own row" (the old
+      // `mine` check) — fixes two cases where they used to silently
+      // disagree: (1) an admin viewing someone ELSE's row on an unlocked
+      // match — now correctly tinted, since the admin CAN edit it; (2) the
+      // acting user's OWN row after the match has locked — now correctly
+      // NOT tinted, since it's no longer editable via this tap path.
+      const canEdit = !locked && (isAdmin || oid===acting);
+      const editClass = canEdit ? ' editable' : '';
+      const tappable = canEdit ? ` data-tapowner="${oid}"` : '';
+      const tapHint = canEdit ? ' style="cursor:pointer"' : '';
+      return `<div class="wrow${editClass}"${tappable}${tapHint}>
         <div class="nm">${memberName(oid)}${extra?`<span class="by"> ${extra}</span>`:''}</div>
         <div class="pk">${w.a}–${w.b}</div>
-        ${!locked && isAdmin ? `<span style="font-size:10px;color:var(--blue);font-weight:700">edit</span>` : ''}
       </div>`;
     }).join("");
   }
@@ -1438,7 +1458,8 @@ function openMatch(n, preloadOwner){
   // unrelated match; opening any match always reflects its real current
   // wagers (or clears the clipboard if there are none) immediately.
   copyMatchWagersToClipboard(n, true);
-  // Admin: tap any wager row to load it into the form
+  // Tap an existing wager row to load it into the form for editing —
+  // admins can tap ANY row (proxy-edit); non-admins only their own.
   document.querySelectorAll("[data-tapowner]").forEach(row=>row.onclick=()=>{
     const oid = row.dataset.tapowner;
     const w = (STATE.wagers[n]||{})[oid];
