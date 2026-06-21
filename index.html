@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
-  v69 · 2026-06-20 · Diagnostic-only follow-up to v68's add-member fix (root cause of "Save does nothing visible" not yet found — deferred, not fixed this round, per explicit instruction to stop debugging and just confirm deploy-safety). addMember()'s save handler now: wraps the api() call in try/catch, console.logs the raw response, and uses alert() (not just toast()) for any failure path — a blocking native dialog can't silently fail to render the way a CSS-transitioned toast theoretically could if a slow Sheets round-trip outlasted the original "Adding member…" toast's duration. Purely additive to the success path (still calls the same real api("addMember",...) from v68, same STATE.members rebuild) — cannot make a currently-broken case more broken, only makes failures louder/more diagnosable for next time.
+  v71 · 2026-06-20 · REVIEW caught a real security gap introduced by v70: the "Whose wager" ownerSel dropdown (and Code.gs's saveWager/deleteWager) had ZERO check that a non-admin's ownerId matched their own identity — meaning any non-admin could enter or delete ANY OTHER PERSON'S wager by picking their name from the dropdown (or via a direct API call, bypassing the dropdown entirely). This was dormant/harmless before v70 since the old unconditional admin-reject caught non-admins before this code ever ran; v70 made it reachable for the first time without adding the matching ownerId check. Fixed on BOTH layers: index.html's ownerOpts() now returns only the acting user's own option for non-admins (admins keep full proxy-entry dropdown, unaffected); Code.gs's saveWager/deleteWager now explicitly reject any non-admin request where ownerId !== me.id, which is the REAL enforcement layer (client restriction alone is not security). Verified via simulation against the exact bug scenario plus regression checks (legitimate non-admin self-entry still works, admin proxy-entry still works).
+  v70 · 2026-06-20 · MACRO RULE EXECUTED: wager entry opened to ALL users.
+  v69 · 2026-06-20 · Diagnostic-only follow-up to v68's add-member fix.
   v68 · 2026-06-20 · Fixed broken "+ Add member" (Participants tab).
   v67 · 2026-06-20 · CORRECTNESS REVIEW of Copy Recent Wagers.
   v66 · 2026-06-20 · Option F implemented: "Player:" label now hidden once identity is genuinely confirmed.
@@ -917,10 +919,9 @@ function crwQualifyingEvents(){
 function updateCopyRecentWagersBtn(){
   const btn = $("#copyRecentWagersBtn");
   if(!btn) return;
-  const isAdmin = ADMINS.includes(memberName(acting));
   const events = crwQualifyingEvents();
-  // Macro rule: admin-only for now. Flag explicitly before this ever changes.
-  const show = isAdmin && events.length > 0;
+  // Opened to all users (admin-only testing period ended per explicit go-ahead).
+  const show = events.length > 0;
   btn.style.display = show ? "" : "none";
 }
 
@@ -1348,11 +1349,17 @@ function openMatch(n, preloadOwner){
   // entry form
   let form="";
   const isAdmin = ADMINS.includes(memberName(acting));
-  const canNormal = !locked && isAdmin;  // only admins can enter/edit wagers
+  const canNormal = !locked;  // all users can enter/edit wagers for future matches; backfill (post-kickoff) stays admin-only via the separate branch below
 
   // build ownerSel options: acting first, then separator, then rest A-Z
   function ownerOpts(){
     const actingMember = STATE.members.find(m=>m.id===acting);
+    if(!isAdmin){
+      // Non-admins can only ever enter wagers for themselves — proxy-entry
+      // for other people stays an admin-only capability. Single option,
+      // nothing else to pick from.
+      return `<option value="${actingMember.id}">${actingMember.name}</option>`;
+    }
     const rest = [...STATE.members].filter(m=>m.id!==acting).sort((a,b)=>a.name.localeCompare(b.name));
     return `<option value="${actingMember.id}">${actingMember.name}</option>`
       + `<option disabled>──────────────</option>`
