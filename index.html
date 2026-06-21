@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
-  v71 · 2026-06-20 · REVIEW caught a real security gap introduced by v70: the "Whose wager" ownerSel dropdown (and Code.gs's saveWager/deleteWager) had ZERO check that a non-admin's ownerId matched their own identity — meaning any non-admin could enter or delete ANY OTHER PERSON'S wager by picking their name from the dropdown (or via a direct API call, bypassing the dropdown entirely). This was dormant/harmless before v70 since the old unconditional admin-reject caught non-admins before this code ever ran; v70 made it reachable for the first time without adding the matching ownerId check. Fixed on BOTH layers: index.html's ownerOpts() now returns only the acting user's own option for non-admins (admins keep full proxy-entry dropdown, unaffected); Code.gs's saveWager/deleteWager now explicitly reject any non-admin request where ownerId !== me.id, which is the REAL enforcement layer (client restriction alone is not security). Verified via simulation against the exact bug scenario plus regression checks (legitimate non-admin self-entry still works, admin proxy-entry still works).
+  v72 · 2026-06-20 · Double-tap protection for Save/Clear wager. With 10+ users now wagering concurrently, a fast double-tap could issue two overlapping requests, both reading "row doesn't exist yet" before either write completes — real duplicate-row risk (round-trip latency, ~1-3s, is much slower than typical double-tap timing, so this isn't a remote edge case). Added SAVE_IN_FLIGHT flag, shared across BOTH saveWager() and the clear/delete handler (deliberately shared, not separate flags — both write to the same (matchN,ownerId) row, so Save-then-Clear-while-pending is the same race category as Save-then-Save). Button disabled visually during the in-flight request too. Reset guaranteed on every exit path (success/server-rejected/network-error) via .finally()/try-finally, specifically to avoid the button getting stuck disabled after a single failure. index.html only — no Code.gs change, since the fix works by preventing the second request from ever being SENT, not by the server reconciling duplicates after the fact. Verified the shared-flag cross-blocking behavior via simulation.
+  v71 · 2026-06-20 · REVIEW caught a real security gap introduced by v70.
   v70 · 2026-06-20 · MACRO RULE EXECUTED: wager entry opened to ALL users.
   v69 · 2026-06-20 · Diagnostic-only follow-up to v68's add-member fix.
   v68 · 2026-06-20 · Fixed broken "+ Add member" (Participants tab).
@@ -744,7 +745,7 @@ function slotLabel(code){
 const ADMINS = ["Venu Nair","Augustine Chandy","Anil Parameswaran"];
 
 let STATE=null, acting=null;
-let TZSTATE="PDT", SORTBY="pts", LOGFILTER="all", IDENTITY_CONFIRMED=false;
+let TZSTATE="PDT", SORTBY="pts", LOGFILTER="all", IDENTITY_CONFIRMED=false, SAVE_IN_FLIGHT=false;
 let dayState={};   // dateLabel -> "open" | "collapsed" (sticky within session)
 const TZS={ PDT:{label:"PDT", off:-420}, IST:{label:"IST", off:330} }; // minutes from UTC
 const _DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -1472,14 +1473,25 @@ function openMatch(n, preloadOwner){
     const oid=$("#ownerSel")?$("#ownerSel").value:acting;
     const existing=(STATE.wagers[n]||{})[oid];
     if(existing){
+      if(SAVE_IN_FLIGHT) return; // same double-tap risk as saveWager
+      SAVE_IN_FLIGHT = true;
+      clr.disabled = true;
       toast("Removing wager…");
-      const r = await api("delete", { token: TOKEN, matchN: n, ownerId: oid });
-      if(!r.ok){ toast("Error: "+(r.error||"unknown"), 4000); return; }
-      if(r.wagers) STATE.wagers = mergeWagers(r.wagers);
-      if(r.log) STATE.log = r.log;
-      toast("Wager removed");
-      renderAll(); renderActing(); openMatch(n); // re-render so the row disappears
-      return;
+      try {
+        const r = await api("delete", { token: TOKEN, matchN: n, ownerId: oid });
+        if(!r.ok){ toast("Error: "+(r.error||"unknown"), 4000); return; }
+        if(r.wagers) STATE.wagers = mergeWagers(r.wagers);
+        if(r.log) STATE.log = r.log;
+        toast("Wager removed");
+        renderAll(); renderActing(); openMatch(n); // re-render so the row disappears
+        return;
+      } finally {
+        SAVE_IN_FLIGHT = false;
+        // clr/the whole sheet may have been re-rendered by openMatch() on
+        // success — re-query rather than trust the closed-over reference.
+        const clrNow = $("#clearWager");
+        if(clrNow) clrNow.disabled = false;
+      }
     }
     const A=$("#scA"), B=$("#scB"), btn=$("#saveWager");
     if(A){ A.value=""; A.placeholder="?"; }
@@ -1505,10 +1517,17 @@ function openMatch(n, preloadOwner){
   if(bft) bft.onclick=()=>{ $("#bfWrap").style.display="block"; bft.style.display="none"; const os=$("#ownerSel"); if(os) os.value=acting; const s=$("#saveWager"); if(s) s.onclick=()=>saveWager(n, locked); };
 }
 function saveWager(n, locked){
+  if(SAVE_IN_FLIGHT) return; // a double-tap could otherwise issue two overlapping
+                              // requests, both reading "row doesn't exist yet" and
+                              // both appendRow()-ing — real duplicate-row risk, not
+                              // just a harmless resubmission of the same values.
   const ownerId=$("#ownerSel").value;
   const a=parseInt($("#scA").value,10), b=parseInt($("#scB").value,10);
   if(isNaN(a)||isNaN(b)||a<0||b<0){ toast("Enter both scores"); return; }
   const isProxy = ownerId!==acting;
+  const btn = $("#saveWager");
+  SAVE_IN_FLIGHT = true;
+  if(btn) btn.disabled = true;
   toast("Saving…");
   serverSaveWager(n, ownerId, a, b).then(r => {
     if(!r.ok){ toast("Error: " + (r.error||"unknown")); return; }
@@ -1517,6 +1536,13 @@ function saveWager(n, locked){
     if(r.log) STATE.log = r.log;
     toast(isProxy ? `Saved for ${memberName(ownerId)} — logged` : "Wager saved");
     renderAll(); renderActing(); openMatch(n);
+  }).finally(()=>{
+    SAVE_IN_FLIGHT = false;
+    // btn itself may no longer exist (openMatch() re-rendered the sheet on
+    // success) — re-querying is harmless either way since we just drop the
+    // reference if it's gone.
+    const btnNow = $("#saveWager");
+    if(btnNow) btnNow.disabled = false;
   });
 }
 
