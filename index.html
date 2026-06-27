@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
+  v169 · 2026-06-26 · Golden Boot: L. Yamal pinned card shows 1 GLS when absent
+  from STATE.topScorers (FIFA page-1 omits him ~rank 85). Once backend board
+  includes him, gbwFindSourceRow wins and this fallback is unused.
   v168 · 2026-06-26 · Match entry: silent per-match clipboard bootstrap (v56)
   replaced with silent clear on first open only — prevents stale/confusing paste
   without copying everyone else's wagers. Save/Clear re-renders skip clear so an
@@ -2172,12 +2175,16 @@ function gbwHydratePlayer(player){
   const src = gbwFindSourceRow(player);
   const fullName = player.fullName || player.name || player.shortName || "";
   const shortName = player.shortName || gbwShortNameFromSource(fullName);
+  let goals = src && src.goals != null ? +src.goals : (player.goals || 0);
+  // FIFA page-1 feed omits L. Yamal (~rank 85) from STATE.topScorers. Pinned
+  // card shows 1 GLS until the backend board includes him — then src wins.
+  if (player.key === "lamine-yamal" && !src) goals = 1;
   return Object.assign({}, player, {
     fullName,
     shortName,
     name: fullName,
     code: teamCode(player.team),
-    goals: src && src.goals != null ? +src.goals : (player.goals || 0),
+    goals,
     rank: src ? src.rank : (player.rank != null ? player.rank : null)
   });
 }
