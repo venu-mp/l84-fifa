@@ -1,6 +1,204 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
+  v168 · 2026-06-26 · Match entry: silent per-match clipboard bootstrap (v56)
+  replaced with silent clear on first open only — prevents stale/confusing paste
+  without copying everyone else's wagers. Save/Clear re-renders skip clear so an
+  in-modal 📋 copy survives. Explicit 📋 + Copy Recent Wagers unchanged.
+  v167 · 2026-06-26 · Copy Recent Wagers: when every wager in the window is
+  cleared (nothing worth sharing), now clears the clipboard — same rule as
+  per-match copy (v55). Fixes stale paste after openMatch silent bootstrap
+  left another match's wagers on the clipboard.
+  v166 · 2026-06-26 · Activity log fix: Tournament WCW/Golden Boot clears (and all
+  other log writes) now refresh the Activity tab immediately — applyLogResponse
+  calls renderLog(). Me filter uses String-coerced owner compare (matches CRW).
+  v165 · 2026-06-26 · Migration step 1: Tournament self-entry formally open to
+  all wagerers on staging pre-lock (WCW + Golden Boot). Code already matched
+  match-wager macro rule — non-admins pick for themselves; admins keep proxy
+  and post-lock backfill. Spec §9 updated; no new client/server gate added.
+  v164 · 2026-06-26 · Export reliability fix: browsers may block four synthetic
+  downloads from one click, so Export now downloads one dependency-free ZIP
+  containing the four timestamped CSV artifacts.
+  v163 · 2026-06-26 · Export now downloads four timestamped CSV artifacts in one
+  action: match wagers, World Cup Winner wagers, Golden Boot wagers, and Top
+  Scorers. All files share a PDT timestamp suffix and remain dependency-free.
+  Tournament now opens on Golden Boot by default.
+  v162 · 2026-06-26 · Golden Boot adds a centered read-only Live Golden Boot
+  Leaderboard card/modal derived from current Top Scorers + active Golden Boot
+  wagers; #1 live leader cards use green/teal fill and detail drill-in stays
+  read-only.
+  v161 · 2026-06-26 · Match Leaderboard rename polish batch: mobile app tabs stay
+  on one row with thicker equal-width buttons; Match Leaderboard can wrap its
+  label onto two lines without pushing Tournament/Activity to a second row; the
+  Match Leaderboard pot card includes a centered surface title above Total Pot.
+  v160 · 2026-06-26 · Rename top-level Participants tab to Match Leaderboard;
+  allow the app tab row to wrap cleanly on narrow screens so the longer label
+  does not squeeze Tournament/Activity.
+  v159 · 2026-06-26 · Copy Recent Wagers visibility now refreshes whenever a
+  save/delete response applies a new Activity log payload, so WCW/Golden Boot
+  picks can reveal the button even when there are no recent match wagers.
+  v158 · 2026-06-26 · Copy Recent Wagers now includes recent Tournament wagers
+  in the same clipboard payload: World Cup Winner teams and Golden Boot players
+  are grouped into comma-separated product rows while existing match rows stay
+  unchanged.
+  v157 · 2026-06-26 · Mobile identity row: moved score refresh status back to the
+  Schedule timezone row (right-aligned); removed "Times in" label; TZ buttons
+  left-justified — frees room so Copy Recent Wagers no longer pushes player name
+  off-screen.
+  v156 · 2026-06-25 · Golden Boot Top Scorers CTA: centered on toolbar row (with
+  Expand all on the right), green pill (var(--green-dim) fill — stats/goals context,
+  not a wager), larger type + ~44px tap target for mobile.
+  v155 · 2026-06-25 · Color/aesthetics pass from on-device review: (1) drop "new"
+  pills from Group/Knockout phase tabs (kept on Tournament + both bets) to cut
+  amber-badge overload; (2) soften light-mode WCW active sub-tab blue (#4A8FD0,
+  dark stays vivid var(--blue)) so it stops dominating; (3) Tournament discovery
+  highlight is now a teal-tint pill (var(--teal-dim) + teal border) — visible in
+  both modes vs the near-invisible 1px border; (4) darken light tertiary text
+  (--faint #8A919C→#767D88) for better contrast.
+  v154 · 2026-06-25 · Golden Boot sub-tab icon 1.5× on mobile (24→36px); 1.75×
+  felt crowded next to label + new pill on narrow tabs.
+  v153 · 2026-06-25 · "new" badge on Golden Boot Tournament sub-tab (matches WCW).
+  v152 · 2026-06-25 · Tournament tab highlight: revert blue text (conflicts with
+  .tab.active); thin teal border on label through Jun 30 instead.
+  v151 · 2026-06-25 · Tournament tab discovery highlight through June 30 (PDT);
+  TOURNAMENT_TAB_HIGHLIGHT_UNTIL = 2026-07-01T07:00:00Z (v152: teal border, not blue).
+  v150 · 2026-06-25 · "new" badge on World Cup Winner Tournament sub-tab.
+  v149 · 2026-06-25 · "new" badge on Group Phase, Knockout Phase, and Tournament
+  tabs (same .gs-new pill as Top Scorers).
+  v148 · 2026-06-25 · Other names modal mobile type: min-goals line 13px,
+  blue subtitle 14px (was 12px / 13px via generic .sub only).
+  v147 · 2026-06-25 · Other names modal subtitle in blue (var(--blue)).
+  v146 · 2026-06-25 · Tournament inner view toggles (By Country/Player · By Wagerer):
+  larger heavier labels on .bbw-tgl (14px/800, taller padding).
+  v145 · 2026-06-25 · Other names sheet title: min-goals suffix on its own line
+  below "Other names" (still from TOP_SCORERS_MIN_GLS).
+  v144 · 2026-06-25 · Tournament: pin World Cup Winner / Golden Boot sub-tabs on
+  scroll (sticky below app bar via --appbar-sticky-h).
+  v143 · 2026-06-25 · Other names tile player line 14px (matches pinned .bbw-name).
+  v142 · 2026-06-25 · Other names tile GLS line matches pinned player cards (gold
+  #B8860B, 12px/800 — same as .gbw-card .bbw-stage).
+  v141 · 2026-06-25 · By Wagerer (WCW + Golden Boot): drop "Your wager" label on
+  acting user's row — green editable-row tint is enough; frees name-column space.
+  v140 · 2026-06-25 · Other names modal title suffix "(min. N goals scored)" from
+  TOP_SCORERS_MIN_GLS; empty-state copy uses the same constant.
+  v139 · 2026-06-25 · Golden Boot Other names sheet: sort candidates alphabetically
+  by last name (gbwCompareByLastName on display names only). Eligibility via
+  goldenBootOtherNameCandidates (2+ GLS, top-20 trim) — not filterTopScorersForDisplay
+  rank order; fifaPersonId/playerKey are identity only, never sort keys.
+  v138 · 2026-06-25 · Other team / Other names selector cards: larger ▾ chevron
+  (.bbw-selector-chev); whole card remains the tap target.
+  v137 · 2026-06-25 · Tournament confirm sheet: larger wagerer name in top-left
+  (.bbw-confirm-who) for World Cup Winner and Golden Boot — shared confirm modal.
+  v136 · 2026-06-25 · Golden Boot By Wagerer mobile fit: give player pills 60%
+  of the row and wagerer name 40%; wagerer names now truncate with ellipsis so
+  longer player pills such as "E. Haaland (NOR, 4 GLS)" have room to breathe.
+  v135 · 2026-06-25 · Golden Boot identity + init warm (pairs Code.gs v80):
+  non-pinned playerKey from server row.playerKey (fifa-person:{id}); gbwFindSourceRow
+  matches by playerKey/fifaPersonId. getInitialData topScorers in STATE on boot;
+  initLiveWarm runs refreshScores (if stale) ∥ warmTopScorers via Promise.allSettled
+  with isolated failures — no ↻ Scores tap needed for Golden Boot candidates.
+  v134 · 2026-06-25 · Golden Boot review fix P2: By Wagerer rows with multiple
+  players now open the same "tap a wager to keep or clear" chooser pattern WCW
+  uses instead of becoming a no-op outside the individual player pills.
+  v133 · 2026-06-25 · Golden Boot review fix P1: hydrate sparse stored player
+  records without blanking their names. Non-pinned picks now preserve stored
+  full/short names and fall back to stored goals/rank while Top Scorers is cold
+  or after a player drops outside the displayed Top Scorers window.
+  v132 · 2026-06-25 · Golden Boot lock-rule parity: admin post-lock CLEAR now
+  shows the "backfill correction · flagged in Activity" note in the confirm
+  sheet (was only shown for new post-lock picks), matching WCW. No behavior
+  change — removal was already lock-gated for non-admins and admin-exempt on
+  both client and server; the Log already records every add/remove permanently.
+  v131 · 2026-06-25 · Golden Boot Step 4: By Player surface now opens the
+  existing Top Scorers modal as read-only context and refreshes the shared
+  scorer cache on close/back-to-surface.
+  v130 · 2026-06-25 · Golden Boot Sprint 1 frontend: replaced placeholder with
+  WCW-style By Player / By Wagerer shell, pinned player metadata, player cards,
+  Other Names selector, pot counting, admin confirm flow, and Activity rendering.
+  v129 · 2026-06-25 · Tournament World Cup Winner copy cleanup: remaining
+  active WCW surface strings now use wager/wagers (expanded rows, confirm modal,
+  toasts, pot subline, Activity text).
+  v128 · 2026-06-25 · Tournament World Cup Winner By Wagerer: bet/bets →
+  wager/wagers (count line, "Your wager" label, remove-button title).
+  v127 · 2026-06-25 · Tournament World Cup Winner By Country: "N bets" → "N
+  wagers"; wager-count label now uses Schedule's .wcount blue (var(--blue)).
+  v126 · 2026-06-25 · Tournament World Cup Winner layout: wager-zone gray fill
+  now stretches the full 40% right column (removed legacy 96px cap); By Wagerer
+  rows use 1fr/1fr so the 50/50 split accounts for the column gap.
+  v125 · 2026-06-25 · Tournament World Cup Winner By Wagerer rows: split each
+  card 50/50 so country pills occupy the right half instead of crowding the name.
+  v124 · 2026-06-25 · Tournament World Cup Winner country cards: right-hand
+  wager-count/expand tap zone widened to 40% of each card; left pick zone gets 60%.
+  v123 · 2026-06-25 · Phase mockup polish: stronger separator below app tab row,
+  slightly softer light-mode Group Phase fill/border, a touch more top breathing
+  room inside the fused card, and less dominant score-status label.
+  v122 · 2026-06-25 · Phase mockup: Schedule render now filters by selected
+  phase client-side (Group = M1-72 only; Knockout = KO M73-104 only). Phase
+  switches reset day collapse state and re-render the visible schedule.
+  v121 · 2026-06-25 · Home density polish: moved score refresh status into the
+  identity card (compact "Jun 25 · 4:25 PM PDT" format), removed the standalone
+  Schedule freshline, slimmed only the timezone buttons, and changed selected
+  pre-KO Knockout label from "Coming soon" to "Preview".
+  v120 · 2026-06-25 · Phase mockup iteration: slimmer folder tabs, removed context
+  line, softened fills/borders, added breathing room below identity row, and switched
+  sublabels to Current / Coming soon (later Archive / Current after KO starts).
+  v119 · 2026-06-25 · Home phase mockup: added Group Phase / Knockout Phase
+  manila-folder selector fused to the existing app tab row. Visual only for now;
+  phase toggle changes context styling/copy but does not yet filter data.
+  v118 · 2026-06-25 · Narrow resilience pass: keep stable legacy surfaces on their
+  direct render paths; harden new Tournament rendering behind renderTournamentSurface()
+  and guard malformed Activity result rows. Init fallback + Top Scorers modal remain safe.
+  v117 · 2026-06-25 · Surface isolation: each tab render wrapped in renderSafe() so
+  a failure in Schedule / Participants / Tournament / Activity cannot break the others.
+  Init still paints Schedule on server error; Top Scorers modal catches its own failures.
+  v116 · 2026-06-25 · Top Scorers modal: cold-fetch only when board empty (not when MP
+  missing). MP column still shown when present; G/ASST/Min never gated on MP.
+  v115 · 2026-06-25 · Top Scorers: revert custom display sort — list order follows FIFA rank only.
+  v114 · 2026-06-25 · Top Scorers display sort: goals → assists → surname only (drop FIFA
+  rank from sort — it encodes minutes and looked like a minutes tie-break).
+  v113 · 2026-06-25 · Top Scorers display sort: drop minutes from tie-break (goals → rank → assists → surname).
+  v112 · 2026-06-25 · Top Scorers sort fix: goals → FIFA rank → assists → minutes;
+  surname A→Z only on full tie (v111 surname-within-goals broke # column order).
+  v111 · 2026-06-25 · Top Scorers: within same goal count, display sort by surname (A→Z).
+  v110 · 2026-06-25 · Top Scorers display: min goals 3 → 2 (frontend only; ~29 rows at current FIFA data).
+  v109 · 2026-06-25 · Top Scorers MP column fix (Code.gs v74): show when mp present.
+  v108 · 2026-06-25 · Top Scorers UX (Code.gs v73): silent warmTopScorers on identity
+  (init + claim) and on cold modal open — no more "tap ↻ Scores" dead-end. MP column
+  hidden when no mp data; shown when FIFA match_squad:match_id yields a count.
+  v107 · 2026-06-25 · Top Scorers: FIFA GameDay source (Code.gs v72). Button open to all
+  users. filterTopScorersForDisplay() — min 3 goals + top-20-with-ties on client;
+  backend additive merge (never drop cached players). Empty/stale/fetchedAt copy.
+  v106 · 2026-06-25 · golden-boot-icon.png recompressed (1024px/233KB → 48px/~5KB) — display size unchanged at 24px CSS.
+  v105 · 2026-06-25 · Tournament Golden Boot sub-tab icon: replaced ⚽ emoji with golden-boot-icon.png asset (pairs with 🏆 on World Cup Winner).
+  v104 · 2026-06-25 · Tournament / World Cup Winner UX polish (staging, pairs with Code.gs v71): unified Keep/Clear confirm modal across By Country, By Wagerer, pills, and remove buttons (replaced separate Manage/Close sheet); tightened already-picked copy ("You have a bet on …") with single Keep when locked non-admin; admin post-lock Clear shows backfill note and toast tag. By Country expanded wager list now uses teal border/tint (not blue — blue reserved for wagered countries and Other team) via bbw-card-unit wrapper; color-mix with --teal-dim fallback for older browsers. Dark-mode Keep button contrast fix and extra confirm-sheet bottom padding. Other team selector card made thicker (2.5px dashed border, taller tap target). Tab renamed to Tournament in user-facing copy/Activity; Golden Boot still placeholder.
+  v103 · 2026-06-25 · BONUS BETS World Cup Winner polish batch (staging): switched Winner from one active pick per owner to multiple active owner+team bets, with each active bet counting ₹500 toward the pot and duplicate owner+team saves returning as no-ops. Added per-bet removal from both By Country and By Wagerer views, explicit bonusWinner Activity rendering for add/remove provenance, real Winner completion lookup for the pulse banner, and admin-only post-lock backfill copy. Mobile-first UI polish: stronger active By Country/By Wagerer toggle, fixed-width country bet-count tile, more visible Other Team selector, 2-column admin wagerer picker, larger remove tap target with light/dark styling, and By Wagerer rows as a 2-column name/bets grid with 15-char name truncation and left-aligned country pills. Golden Boot remains intentionally placeholder-only for the next phase.
+  v102 · 2026-06-21 · BONUS BETS Sprint 2 — World Cup Winner fully built (TWIN ONLY, pairs with Code.gs v69; production untouched). Replaced the Sprint-1 placeholder with the complete picking surface: 7 FIXED alphabetical cards (Argentina/Brazil/England/France/Germany/Netherlands/Spain — locked, never removed/reordered) → dashed demarc → DYNAMIC promoted zone (one card per non-fixed team with ≥1 current picker; appears on first pick, vanishes when empty, chronological by (re-)promotion — verified via simulation that a re-promoted team lands FRESH at the end, never restored to its old slot) → "🌐 Other team..." selector (opens a sheet: flag+code grid, 3-per-row, all 41 non-fixed TEAM_INFO nations alphabetical — pruning to the real 25 knockout qualifiers is a dated ~June 27 follow-up, not done here). Each card has a two-zone row (left = pick action, right = "N wagers" expand toggle, separated by a demarc border so browsing can't accidentally fire a wager) with independent (non-accordion) expand/collapse + a smart Expand-all/Collapse-all button mirroring Schedule's exact label-reflects-state pattern. Tapping any pick source (shortlist/promoted/grid) routes through ONE universal confirm modal (flag + full name + code, identical regardless of entry point) — admins get an extra "for whom" proxy step first (same capability as match-wager backfill), enforced server-side too, not just hidden client-side. By Country / By Wagerer toggle (the latter: simple alphabetical-by-person lookup, no scoring math). Pot card now shows REAL numbers for World Cup Winner (distinct active wagerers × ₹500) via the new renderBonusPot() (replaces Sprint 1's static renderBonusPotPlaceholder); Golden Boot stays a ₹0 placeholder until Sprint 3. New client state: BBW_FIXED, bbwExpanded, bbwPromotionOrder. getInitialData's response now includes bonusWinnerPicks, folded into STATE on init.
+  v101 · 2026-06-21 · BONUS BETS: banner copy changed to "Picks LOCK when the KnockOut stage begins" (fixed a LOCKS/LOCK subject-verb typo mid-edit). Wired REAL knockout-stage detection: new KNOCKOUT_START_UTC constant = "2026-06-29T03:00:00Z" (= Sunday June 28 2026, 8:00 PM Pacific — the first Round of 32 kickoff, Match 73 Group A runners-up vs Group B runners-up, verified via web search against multiple sources). Stored as a precise UTC instant specifically to avoid this project's documented timezone-fragility pitfalls (Date.now() is always UTC-based, so the comparison is unambiguous regardless of device timezone). updateBonusPulse now checks this FIRST: once Date.now() passes kickoff, the banner is REMOVED ENTIRELY (display:none, not replaced with a static "locked" message) — confirmed earlier as the agreed design: nothing useful left to say once the deadline passes, and removing it reclaims the vertical space for Phase B's more useful live content. This kickoff-based removal is REAL and working today (depends only on the clock); the existing both-bets-picked pulse-stop logic remains a Sprint 1 placeholder (hasPickedWinner/hasPickedGoldenBoot still hardcoded false) until Sprint 2/3 wire real pick lookups.
+  v100 · 2026-06-21 · BONUS BETS: lock-reminder banner recolored from neutral warm grey to soft teal. Chose teal over light green specifically because the app already uses GREEN to mean "points / win" (Group Standings' today-highlight, etc.) — a green banner risked an unintended "good news" association on what's really just a neutral deadline notice. Teal isn't claimed by any existing app meaning, so it stays unambiguous. Dark-mode variant included.
+  v99 · 2026-06-21 · BONUS BETS Sprint 1 — real fixes from an actual on-device screenshot (prior versions were CSS-reasoned, never visually verified — this round corrects what the screenshot actually showed). (1) Pot card had become nearly indistinguishable from its panel (both were almost the same pale gold) — gave it real, visible contrast again (#CFE3F6/#F3DD8C with a soft shadow) while staying lighter than the bold sub-tab fill — a genuine "step down from tab, step up from panel," not "disappears into panel." (2) Pot-amt text shrunk 24px mono→17px regular UI font (per explicit direction) and weight reduced 900→800 — no longer visually competes with the sub-tab above it; scoped via #winnerPotCard/#gbPotCard .pot-amt so Participants' OWN pot-amt (still 24px/mono/900) is completely untouched. (3) Active sub-tab text bumped 16px→20px — the screenshot showed clear unused horizontal space around both labels, so there was real room to go bigger without wrapping; this time verified against the actual screenshot's spacing, not just CSS math. (4) Inactive sub-tab no longer uses opacity dimming (the screenshot showed it reading as washed-out/disabled, not "available but unselected") — now a lighter color+border treatment that stays clearly legible and tappable. (5) Banner recolored from amber to a neutral warm grey (#F1EDE3) — previously banner+tab+panel were three near-identical yellow/tan tones stacked, reading as visually muddy; the banner is now visually distinct from the gold Golden Boot panel beneath it. (6) Placeholder box changed from a dashed border (which visually competed with the panel's own colored border) to a plain, slightly-recessed solid card, and shortened its padding.
+  v98 · 2026-06-21 · BONUS BETS Sprint 1 — 5 on-device fixes (still layout-shell only, TWIN ONLY). (1) Sub-tab text bumped 13.5px→16px (NOT all the way to pot-amt's 24px — "🏆 World Cup Winner" is a multi-word label inside a flex:1 half-row box; literal 24px bold risked wrapping/overflow on narrow phones. 16px is a deliberate, honest compromise: meaningfully larger than before, reads confidently next to the pot's 24px, without breaking the label layout. Flagging this explicitly rather than silently under/over-delivering on the literal ask). (2) Removed the redundant "(World Cup Winner)" / "(Golden Boot)" string from the pot card text — now that v97's fused seam makes the active sub-tab itself the panel's label, restating the bet name inside the card was duplicate information. Reverted to a plain "Total Pot = INR 0" with no per-card label param. (3) SWAPPED bet colors: Golden Boot is now GOLD (the trophy/award association fits a "boot" prize better than a country pick), World Cup Winner is now BLUE — reversed from v96/v97's original assignment, across sub-tab, panel wash, and pot card together (kept internally consistent). (4) Fixed pot-sub text "0 entries" → "0 wagers" (matches the app's established wager vocabulary everywhere else). (5) Strength ordering corrected: the ACTIVE SUB-TAB now carries the strong, solid color fill (e.g. solid var(--blue) background, white text) — this is the dominant visual statement; the panel below gets only a mild wash, and the pot card is mildest of all (flat tint, no gradient/shadow) — previously this was backwards (bold gradient+shadow pot card, thin-bordered tab). Strength now descends tab→panel→pot, not the reverse.
+  v97 · 2026-06-21 · BONUS BETS Sprint 1 — attached-tab seam + bet-colored pot cards (still layout-shell only, TWIN ONLY). (1) The active sub-tab now visually FUSES with its content panel below — bottom corners flatten, bottom border erases, -2px margin closes the gap — so World Cup Winner/Golden Boot read as physical folder-tabs attached to their own screen, not floating buttons above a disconnected box. Reinforced with a matching 2px colored border running down both sides + bottom of the active panel (gold for Winner, blue for Golden Boot), continuing the seam past just the top edge. (2) Pot cards no longer use the shared gold-gradient .pot-card styling (borrowed from Participants) — #winnerPotCard and #gbPotCard now have their OWN gradient matching their bet's color identity (gold-on-gold for World Cup Winner, blue-on-blue for Golden Boot), so the pot visually belongs to that bet's color family rather than reading as a generic shared component. (3) Each card's wording now self-identifies which bet it's for ("Total Pot (World Cup Winner) = INR 0" / "Total Pot (Golden Boot) = INR 0", via renderBonusPotPlaceholder's new label param) so the card is unambiguous even out of context (e.g. a screenshot). (4) Inactive sub-tab dims to 45% opacity once its sibling is selected (.bb-subtabs:has(.active) — confirmed solid cross-browser support, high compatibility on Safari per a recency check), sharpening the active tab's color by contrast.
+  v96 · 2026-06-21 · BONUS BETS Sprint 1 refinements (still layout-shell only, TWIN ONLY). (1) Lock-reminder banner now gently PULSES (slow opacity breathe, 2.6s ease, NOT a hard on/off flash — continuous hard flashing reads as alarming/nagging rather than the "classy" standard set for this feature) while the acting player hasn't completed BOTH bets; stops the instant they have (updateBonusPulse, called from renderActing). SPRINT-1 STUB: no real pick-storage exists yet, so hasPickedWinner/hasPickedGoldenBoot are hardcoded false (always pulsing) — the pulse MECHANISM is final, only the two completion checks are placeholders, to be replaced with real BonusWinner/BonusGoldenBoot lookups in Sprint 2/3. (2) Sub-tab row made more prominent (bolder border/padding/weight) with each bet given its OWN color identity instead of one shared blue: World Cup Winner = gold (#C9A227 active border, matches the trophy/winner theme), Golden Boot = blue (var(--blue), matches Top Scorers' existing blue stat-header convention). That same color now carries as a very mild background wash across the ENTIRE active sub-view (not just the tab itself) — #bbsub-winner.active / #bbsub-goldenboot.active — so there's no ambiguity about which bet's screen you're on even after scrolling past the toggle row. Both colors have dark-mode variants. (3) Confirmed (no code change needed) — each pot card was ALREADY nested inside its own .bb-sub-view (hidden via display:none until that sub-tab is active), so the pot never shows at the Bonus-Bets-landing level before a bet is chosen, which was the locked design intent from the start.
+  v95 · 2026-06-21 · BONUS BETS — Sprint 1 (layout shell only, no backend/picking logic yet — TWIN ONLY, not for production). New 4th top-level tab "Bonus Bets" (Schedule · Participants · Bonus Bets · Activity), admin-gated same pattern as Top Scorers (updateBonusTab, called from renderActing; hidden via display:none until ADMINS check passes — server-side gating to be added in Sprint 2 alongside the real backend). Inside: a countdown/lock banner shell (bbBanner, currently static text — live countdown logic deferred to Sprint 2), and an inner two-way sub-tab toggle (🏆 World Cup Winner / ⚽ Golden Boot) mirroring the outer tab bar's exact click-handler pattern but scoped to .bb-subtab/.bb-sub-view. Each sub-tab has its own .pot-card (reusing the EXACT same component/markup as Participants' pot — same gold gradient, same .pot-amt/.pot-sub structure) currently showing a static "₹0 · 0 entries" placeholder (renderBonusPotPlaceholder, called once from init) until Sprint 2/3 wire real entry counts at ₹500/entry. A dashed-border placeholder box marks where each sub-tab's real content (cards, picking UI) lands in the next two sprints. New CSS: .bb-banner / .bb-subtabs / .bb-subtab / .bb-sub-view / .bb-placeholder.
+  v94 · 2026-06-21 · Fixed two real on-device bugs from v93's glossary patch, and rebuilt the Top Scorers glossary properly per user suggestion. ROOT CAUSE: the glossary was one flowing hanging-indent paragraph (text-indent:-64px on the FIRST line only, to align with padding-left:64px) — but text-indent never reapplies after a <br>, so the "Glossary:" line (and v93's new "MP matches" line) inherited the plain 64px padding with no compensating negative indent, visibly shifting them right of "Tie-breaking by:". Separately, that 64px left padding stacked with ts-gloss's 46px right padding ate ~110px of a ~340px-wide phone screen, clipping "Players tying on all three share a" mid-sentence. FIX: rebuilt as a real two-column CSS grid (.ts-gloss-grid: label column + description column) instead of a single flowing paragraph — "Tie-breaking by:" and "Glossary:" each sit in column A and always start flush, independent of how many lines column B wraps to; no more text-indent/<br> alignment tricks, no more accidental clipping. The sticky-✕ clearance is now scoped only to the first row's description cell (nth-child(2)) rather than the whole block. Group Standings' OWN glossary (gs-gloss-top, single line, never had this bug) is untouched — Top Scorers now has its own dedicated, isolated styling.
+  v93 · 2026-06-21 · Glossary fix: "MP matches" was wrapping mid-flow on mobile (it's part of one continuous hanging-indent paragraph, so it broke wherever the line ran out of width — sometimes mid-phrase). Gave it an explicit hard line-break + its own line (.ts-gloss-mp), indented to the same 64px the paragraph's hanging-indent already uses for wrapped lines — so "MP matches" now consistently sits on its own line, left-aligned near where "GLS" (the first glossary term) starts, instead of wrapping unpredictably.
+  v92 · 2026-06-21 · Added 5px margin-right on .ts-rank — the rank-to-flag gap was previously just the row's 6px grid gap (tighter than the breathing room every other column pair now has), since the 22px rank column is text-align:right with the digit sitting flush against its own edge. Isolated, low-risk change (rank content is always 1-2 digits with slack in its 22px box; doesn't take width from the columns under real pressure).
+  v91 · 2026-06-21 · Fixed on-device report: the GLS demarcation line (v90) was rendering with zero gap, touching the "S" in "GLS" directly. Cause: .ts-g is a plain inline <span>, and padding-right on a plain inline element doesn't reliably create visible space before a border the way it does on a block-level box. Fixed by adding display:inline-block to .ts-g (padding now renders properly) and increasing padding-right 6px→9px. Widened the Goals grid column slightly (36px→40px) to comfortably fit "GLS" plus the larger padding/border without crowding the player-name column.
+  v90 · 2026-06-21 · Top Scorers header polish. (1) Column header renamed G→GLS (header + glossary key) — was previously designed but held back ("don't build yet"), now built. (2) The header cell now carries the ts-g class (it was plain ts-stat before, so it never actually picked up the gold styling added in v87 — only the per-row VALUES were gold, not the header text). Fixed: header GLS now renders gold, matching each row's goal count. (3) Added a vertical demarcation line after GLS (border-right, mirroring .ts-mp's existing left-border pattern for the Min/MP gap) — visually separates the PRIMARY ranking criterion (Goals) from the two tiebreaker columns (ASST/Min), same visual language used on the other side of the table. Widened the Goals grid column slightly (32px→36px) to comfortably fit "GLS" plus the new border/padding.
+  v89 · 2026-06-21 · Copy Recent Wagers: fixed the all-cleared edge case from v88. Previously, if every matchup in the window had been cleared, the function still copied a header + "No active wagers right now." to the clipboard AND showed the normal "Copied to clipboard - paste into WhatsApp" toast — wrong advice (nothing worth pasting) and left an empty-feeling message sitting on the clipboard. Now: when current.length is 0, nothing is copied at all — shows toast "No active wagers to share right now" (4s) and returns early, before building the message or touching the clipboard.
+  v88 · 2026-06-21 · Copy Recent Wagers: changed from "every raw edit as its own line" to "one line per matchup, showing only your CURRENT position" — this is a deliberate reversal of the v52 design (which intentionally showed full edit history in the pasted text). Reasoning: the group reading a WhatsApp paste cares what you've bet NOW, not your edit history; a match edited 3x now shows just the final value, no "(CURRENT)" suffix (nothing left to disambiguate once collapsed to one line). A matchup whose LATEST event in the window is a clear is OMITTED entirely — "cleared" as a bare standalone line read as a non-sequitur with no context, and the point of this feature is current live bets, not a history feed. If EVERY matchup in the window ends up cleared, shows "No active wagers right now." instead of an empty body. IMPORTANT — this is purely a display change: the underlying Sheet Log keeps every raw event PERMANENTLY regardless (no retention change at all); full edit provenance remains fully recoverable any time via the Activity tab's "Show all" / the fullLog action — it's just no longer surfaced in this specific clipboard convenience feature. Header date-range still spans the full raw window (earliest raw event → now) even though some events collapse away below. Verified via simulation against edit-then-edit, edit-then-clear, and single-entry scenarios.
+  v87 · 2026-06-21 · Top Scorers table polish, reinforcing "Goals decides it, Assists/Min only break ties": (2a) Goals column (header + every row's value) now renders in a distinct gold (#B8860B) instead of the blue used for AS/Min headers — visually marks it as the PRIMARY ranking criterion, separate from the two tiebreakers. (.ts-head .ts-g placed AFTER .ts-head .ts-stat in the CSS so gold correctly wins over the blue rule — same specificity, cascade order matters here.) (2b) Added a small extra right-margin on the Goals cell, creating a visible gap before the AS/Min tiebreaker columns. (2c) Renamed the assists column header from "AS" to "ASST" (header + glossary key) for clarity; widened that grid column (32px→38px) and gave Goals back a touch of room (26px→32px) so neither clips.
+  v86 · 2026-06-21 · Participants leaderboard tiebreaker changed: players level on points are now ordered by 6-POINT WIN COUNT alone (b.w6-a.w6), dropping 3-point wins from the tiebreaker (previously (w6+w3) combined — a player with more 3-pointers could outrank one with more 6-pointers on equal points; now pure 6-pointer count decides list position within a points-tier, rewarding bigger correct calls). Falls through to name if still equal, same as before. Rank numbering UNCHANGED — still sequential (rank=i+1 by list position, not a shared/tied rank) — so this only reorders who sits higher within an equal-points group; nobody's points-tier or prize split (50/30/20 by sequential rank) is otherwise affected. One-line change in standings()'s sort comparator.
+  v85 · 2026-06-21 · (cleanup) Removed the temporary [CRW] console diagnostic now that Copy Recent Wagers is confirmed fixed — the real bug was the owner comparison (member ids are strings like "m0"; the log's owner round-trips through the Sheet/JSON and didn't strictly === acting), fixed by String()-coercing both sides; the 3h-window/timezone theory was a red herring (verified: within-3h tracked owner-matched). Live in-session update confirmed working (counts climbed as wagers were placed, no reload). (1) Schedule "today" highlight fix: the green era-today styling was keyed on g.started (first match has KICKED OFF), so today was only green while a match was in progress — not before kickoff (showed as "future", merely bolder) or after results (showed as "past", dimmed). Now "today" = the actual current calendar day in the app's selected timezone (g.label===disp(now).date), so the current day is green ALL day. A started-but-not-today day is now correctly "past" (previously a past day with un-entered results wrongly showed green). Removed the now-unused allDone local.
+  v84 · 2026-06-21 · (1) Top Scorers: country code now shown in parentheses after the name — "🇫🇷 K. Mbappé (FRA)" — code stays pinned (flex:none), name truncates. (2) Moved the "new" badge from the Copy Recent Wagers button to the Top Scorers button (added position:relative to #topScorersBtn to anchor it). (3) Copy-Recent-Wagers-not-lighting-up: traced the full chain — button/refresh/server all intact (v67 returns the log), so crwQualifyingEvents() is returning empty. Hardened the owner compare to String(e.owner)===String(acting) (the log's owner round-trips through the Sheet uncoerced, unlike wager owners via mergeWagers, so a "5"===5 mismatch would silently match nothing) AND added a TEMP console diagnostic to disambiguate the other suspect — the 3h timestamp window (a Sheets-timezone round-trip on the ISO timestamp could push a just-placed wager outside 3h). Console shows owner-matched count + per-event diffMin so we can see which it is. Diagnostic to be removed once confirmed.
+  v83 · 2026-06-21 · Removed the temporary latency diagnostic (the ⏱ ms/cache line). Conclusion from it: caching works (a hit avoids the ~750ms API fetch), and the residual ~1.5-2.6s is Apps Script's own variable round-trip (cold-start + auth read), which production warmth largely masks and which a cache-first reorder wouldn't meaningfully move (a cache HIT measured slower than a MISS — the cost is platform jitter, not our logic). So no micro-opt; instead improved the PERCEIVED wait: the modal now opens instantly with a centered spinner + "Loading top scorers…" so the unavoidable round-trip reads as fetching, not stuck. New CSS: .ts-load / .ts-spin (+ @keyframes ts-spin); removed .ts-perf.
+  v82 · 2026-06-21 · Top Scorers: (1) fixed "Group Standings" button wrapping to two lines on narrow phones — the buttons no longer force a 50/50 split (which starved the longer label); each now sizes to its own text (flex:0 1 auto) and never wraps. (TEMP) Added a latency diagnostic line at the top of the modal showing total tap→render ms and whether the server served from cache (cache HIT/MISS) — to settle whether the perceived slowness is the API fetch or the Apps Script round-trip. Client-side only (reads the cached flag the server already returns); to be removed once latency is understood. New CSS: .ts-perf.
+  v81 · 2026-06-21 · Top Scorers UI fixes from on-device review. (1) Button row: Group Standings + Top Scorers are now an equal-width pair (flex:1 1 0) grouped on the left — the two sibling stat-views together — with Collapse-all pushed compact to the right; fixes the too-narrow Top Scorers button. (2) Close ✕ no longer overwrites glossary text: the glossary gets right-padding (.ts-gloss) clearing the sticky button. (3) Flag + country code now sit adjacent to the player name (one left-aligned .ts-player group: flag · name · code, name truncates via ellipsis) instead of floating right against the stat columns — the old layout let the 1fr name column expand and push the team to the right edge. (4) Stat column HEADERS (G/AS/Min) now render in blue (var(--blue)), matching the Group Standings header pattern; MP header stays muted (informative-only), and MP gets a left demarcation line + extra spacing separating it from Min. (5) Ranking "sequential not shared" investigated and confirmed CORRECT, not a bug: the 2022 data has zero full-tuple ties (every player differs on minutes, the 3rd tiebreaker), so standard-competition ranking correctly yields sequential numbers. Shared ranks appear only on genuine full-tuple ties (rare with full data) or the goals-only free board. No code change. New CSS: .ts-player/.ts-flag/.ts-nm/.ts-code/.ts-gloss; .ts-name/.ts-team removed.
+  v80 · 2026-06-21 · Backend auto-detect for safe parallel testing. API_URL is now chosen at runtime: file:// / localhost / a /l84-test/ path → the TEST twin deployment; everything else (the real GitHub Pages site) → PRODUCTION. An unrecognized host defaults to PROD, so a test build can never leak onto the live site — the same index.html file is safe in both environments, removing the hand-edit-the-URL footgun. Adds a fixed red "TEST" badge (top-right) whenever the twin backend is active, so the environment is never ambiguous. No behaviour change in production.
+  v79 · 2026-06-21 · Top Scorers built out (renamed from the v78 "Golden Boot" test button — it's a stats view, not a wager; "Golden Boot" is reserved for future wagering). Button relabelled "Top Scorers" (gold outline, mirrors #groupStandingsBtn's blue-outline pattern), and the 📊 icon was dropped from Group Standings to keep the 3-button row compact. Still admin-only (updateTopScorersBtn, gated both client + server). The modal now renders the real design: Group-Standings-consistent glossary (gs-gloss gs-gloss-top: "Tie-breaking by: goals > assists > fewest minutes…" + the G/AS/Min/MP key) and a ranked table (# · Player · Team · G · AS · Min · MP). Ranks/sort come pre-computed from Code.gs (the client just renders); MP is muted grey + informative-only (absent from the tie-break line); names truncate via CSS with a min-width guaranteeing ≥9 surname chars; Team uses the existing teamFlag()/teamCode(). Renamed internals goldenBootBtn→topScorersBtn, showGoldenBoot→showTopScorers. New CSS: #topScorersBtn / .ts-row / .ts-head / .ts-rank / .ts-name / .ts-team / .ts-stat / .ts-g / .ts-mp / .ts-diag. Pairs with Code.gs v67 (caching + server-side ranking). Still season 2022 until the paid 2026 plan.
+  v78 · 2026-06-21 · [superseded by v79] Added the initial "Golden Boot" test button to the Group Standings row as the API-Football connectivity harness.
+  v77 · 2026-06-21 · Activity-log depth cap (client side of the Code.gs v65 work). The log payload from init/save/delete/refresh is now the recent slice (≤LOG_LIVE=200) plus a logHasMore flag, instead of the whole sheet. New "Show all / Show recent" toggle beside the Activity filter (renderDepthToggle), shown only when logHasMore. "Show all" fetches the full log ONCE via the new fullLog action (serverFullLog), caches it in the buffer (logFull), and thereafter toggling recent↔all is free client-side. Any write resets depth to live via applyLogResponse() (replaces STATE.log + logHasMore, logFull=false, LOGVIEW="recent") — so after acting you snap back to recent activity. Also fixed the Me-filter predicate: it now shows only the acting user's OWN wager activity (the dead `e.owner===undefined` clause is gone) — system entries (refresh/result/member-added) are intentionally excluded from "Me" and remain in "All", per design. New CSS: .depth-toggle / .depth-toggle .act.
+  v76 · 2026-06-21 · Identity-claim feedback made visible. Tapping a name in the picker fires a real network round-trip (claim → Code.gs) with a noticeable delay before the overlay closes; the existing toast("Setting identity…") was useless here because it renders at z-index 90, BEHIND the z-index 999 picker overlay + its scrim — so the user saw nothing during the wait. Replaced with in-overlay feedback: the tapped button immediately shows "Confirming [Name]…" (present-tense, names the choice for reassurance), and the whole name list disables during the round-trip so an impatient second tap can't fire a second claim. On failure, the button shows "⚠ Couldn't confirm — retry" in-overlay (the error toast was equally hidden before) and the list re-enables for retry/re-pick. Removed the two now-dead occluded toast() calls from the claim handler. New CSS: .idname:disabled / .idname.confirming (blue) / .idname.iderror (red).
   v75 · 2026-06-21 · Simplified per user feedback: removed the "✎ Edit" pill from BOTH surfaces (match-detail modal's wrow, Schedule-card's pk-row) — row tint alone is adequate signal, the pill was extra visual clutter, and it never fit naturally into pk-row's narrow 4-column grid layout anyway. Also caught and fixed: pk-row's editable rows previously had NO persistent tint at all (only an :active press-state) — they were still relying entirely on the old, genuinely-too-small 9px pk-edit-hint character, which is exactly the visibility problem this whole thread was trying to solve. Added a proper persistent green-dim tint to pk-row.pk-editable, matching wrow's treatment, and removed the now-fully-orphaned pk-edit-hint/wrow-editbtn CSS rules (confirmed zero remaining markup references to either before removing).
   v74 · 2026-06-20 · Made editable wager rows in the match-detail modal more visually obvious.
   v73 · 2026-06-20 · Match-detail modal wager rows now tappable for self-edit by non-admins too.
@@ -83,7 +281,7 @@
     --line-2:rgba(18,22,30,.16);
     --paper:#171A20;      /* primary text */
     --muted:#586069;      /* secondary text */
-    --faint:#8A919C;      /* tertiary */
+    --faint:#767D88;      /* tertiary */
     --red:#D2362F;        /* L84 brand red */
     --red-dim:#FBE5E4;
     --green:#1C964F;      /* points / win */
@@ -91,6 +289,8 @@
     --amber:#A9710F;      /* pending / locked */
     --amber-dim:#F8EFD6;
     --blue:#2B79C7;
+    --teal:#1A8F82;      /* browse / expand — not green (win/yours) or blue (pick/cta) */
+    --teal-dim:#E0F2EF;
     --bar:rgba(239,241,244,.85);
     --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
     --ui: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -104,6 +304,7 @@
       --green:#34C26C; --green-dim:#1d3328;
       --amber:#E2A23C; --amber-dim:#362c18;
       --blue:#5BA7E8; --bar:rgba(21,23,28,.86);
+      --teal:#3DB8A8; --teal-dim:#11302C;
     }
   }
   *{box-sizing:border-box}
@@ -119,8 +320,9 @@
   .appbar{
     position:sticky; top:0; z-index:40; background:var(--bar);
     backdrop-filter:saturate(140%) blur(10px);
-    border-bottom:1px solid var(--line); padding:10px 14px 8px;
+    border-bottom:1.5px solid rgba(30,41,59,.18); padding:10px 14px 8px;
   }
+  @media(prefers-color-scheme:dark){.appbar{border-bottom-color:var(--line)}}
   .brandrow{display:flex; align-items:center; gap:10px}
   .crest{width:30px;height:30px;border-radius:7px;background:var(--red);
     display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;
@@ -138,7 +340,7 @@
   .iconbtn.red{background:var(--red);border-color:transparent}
 
   /* Identity bar (replaces old "You are" dropdown) */
-  .actingrow{display:flex;align-items:center;gap:8px;margin-top:9px;padding:6px 12px;background:linear-gradient(135deg,#e8f4f0,#ddeef8);border-radius:9px;border:1px solid rgba(0,120,100,.15)}
+  .actingrow{display:flex;align-items:center;gap:10px;margin-top:9px;padding:8px 12px;background:linear-gradient(135deg,#e8f4f0,#ddeef8);border-radius:9px;border:1px solid rgba(0,120,100,.15)}
   @media(prefers-color-scheme:dark){.actingrow{background:linear-gradient(135deg,#0d2e28,#0d2340);border:1px solid rgba(0,200,160,.2)}}
   .actingrow.loading{background:linear-gradient(135deg,#fdf3e0,#fde8c0);border:1px solid rgba(180,120,0,.2)}
   @media(prefers-color-scheme:dark){.actingrow.loading{background:linear-gradient(135deg,#2a1f00,#1f1500);border:1px solid rgba(255,180,0,.2)}}
@@ -147,10 +349,19 @@
   @media(prefers-color-scheme:dark){.actingrow.loading .acting-label{color:#ffb300!important}.actingrow.loading .acting-name{color:#ffd060!important}}
   .actingrow .acting-name{color:#0d3d30}
   @media(prefers-color-scheme:dark){.actingrow .acting-label{color:#5ecfb8}.actingrow .acting-name{color:#a8eede}}
+  .acting-main{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto}
   .acting-label{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;flex:none}
   .acting-name{font-size:14px;font-weight:750;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--paper)}
   .acting-reset{font-size:10px;color:var(--blue);background:none;border:none;cursor:pointer;padding:2px 4px;font-family:var(--ui);font-weight:600;flex:none;white-space:nowrap}
-  .crw-btn{flex:none;white-space:nowrap;margin-left:auto;background:var(--green);color:#fff;border:none;border-radius:7px;position:relative;
+  .score-status{text-align:right;line-height:1.15;flex:none}
+  .actingrow .crw-btn{margin-left:auto}
+  .score-state{display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:10px;
+    color:var(--muted);font-weight:750;letter-spacing:.02em;white-space:nowrap}
+  .score-dot{width:6px;height:6px;border-radius:999px;background:var(--amber);display:inline-block;flex:none}
+  .score-status.fresh .score-dot{background:var(--green)}
+  .score-status.stale .score-dot{background:var(--amber)}
+  .score-time{display:block;margin-top:3px;color:var(--faint);font-size:10.5px;font-weight:650;white-space:nowrap}
+  .crw-btn{flex:none;white-space:nowrap;background:var(--green);color:#fff;border:none;border-radius:7px;position:relative;
     padding:7px 11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--ui)}
   .crw-btn:active{opacity:.8}
 
@@ -162,32 +373,76 @@
   #idList{display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow-y:auto;-webkit-overflow-scrolling:touch}
   .idname{background:var(--ink);border:1px solid var(--line-2);border-radius:10px;padding:13px 10px;font-size:13px;font-weight:650;color:var(--paper);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;user-select:none}
   .idname:active{background:var(--red);border-color:var(--red);color:#fff}
+  .idname:disabled{opacity:.45;cursor:default}
+  .idname.confirming{opacity:1;background:var(--blue);border-color:var(--blue);color:#fff}
+  .idname.iderror{opacity:1;background:var(--red);border-color:var(--red);color:#fff}
   #idAddBtn{grid-column:1/-1;background:var(--blue);border:none;border-radius:10px;padding:13px 10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;user-select:none;margin-top:4px}
   #idAddBtn:active{opacity:.8}
 
   /* ---------- Tabs ---------- */
-  .tabs{display:flex; gap:4px; padding:8px 12px 0; position:sticky; top:0; z-index:30}
+  .phase-wrap{position:sticky;top:0;z-index:30;padding:14px 12px 0;background:var(--bg)}
+  .phase-tabs{display:flex;align-items:flex-end;gap:8px;padding:0 6px}
+  .phase-tab{position:relative;flex:1;border:1.5px solid var(--line-2);border-bottom:0;
+    border-radius:12px 12px 0 0;padding:8px 8px 7px;background:var(--surface);
+    color:var(--muted);font-family:var(--ui);font-size:12px;font-weight:850;
+    letter-spacing:.01em;cursor:pointer;transform:translateY(5px);
+    -webkit-tap-highlight-color:transparent}
+  .phase-tab:not(.active){color:var(--paper);background:var(--surface-2);opacity:.88}
+  .phase-tab .phase-sub{display:block;margin-top:1px;font-size:9px;font-weight:750;
+    letter-spacing:.02em;text-transform:uppercase;opacity:.72}
+  .phase-tab.active{z-index:2;transform:translateY(1px);padding-top:9px}
+  .phase-tab[data-phase="group"].active{background:#E8D9B3;border-color:#C2A568;color:#342713}
+  .phase-tab[data-phase="knockout"].active{background:#344E7A;border-color:#5D78A8;color:#fff}
+  .phase-card{border:1.25px solid var(--line-2);border-bottom-width:1.75px;border-radius:0 0 14px 14px;
+    background:var(--surface);box-shadow:0 3px 9px rgba(0,0,0,.04);overflow:hidden}
+  .phase-card.group{border-color:#C2A568;background:linear-gradient(180deg,#F5ECD8 0%,var(--surface) 68%)}
+  .phase-card.knockout{border-color:#5D78A8;background:linear-gradient(180deg,#E8EEF8 0%,var(--surface) 68%)}
+  .tabs{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;
+    flex-wrap:wrap;
+    padding:7px 4px 0}
   .tab{
-    flex:1; text-align:center; padding:9px 4px; font-size:12.5px; font-weight:700;
-    color:var(--muted); border:0; background:transparent; cursor:pointer;
-    border-bottom:2px solid transparent; letter-spacing:.02em; font-family:var(--ui);
-  }
-  .tab.active{color:var(--paper); border-bottom-color:var(--red)}
+    flex:0 1 auto;text-align:center;padding:9px 6px;font-size:12.5px;font-weight:700;
+    color:var(--muted);border:0;background:transparent;cursor:pointer;
+    border-bottom:2px solid transparent;letter-spacing:.02em;font-family:var(--ui);
+    white-space:nowrap;min-width:0}
+  #bonusTab{position:relative}
+  #bonusTab.tab-highlight:not(.active){background:var(--teal-dim);border:1px solid var(--teal);
+    border-radius:7px;padding:8px 7px 7px}
+  .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
   .view{padding:12px 12px 90px; display:none}
   .view.active{display:block}
+
+  @media(prefers-color-scheme:dark){
+    .phase-wrap{background:var(--bg)}
+    .phase-tab:not(.active){background:#20242B;color:#D4D8E0;opacity:.9}
+    .phase-tab[data-phase="group"].active{background:#6B5732;border-color:#8A703F;color:#FFF3D2}
+    .phase-tab[data-phase="knockout"].active{background:#263B63;border-color:#5D78A8;color:#fff}
+    .phase-card.group{border-color:#8A703F;background:linear-gradient(180deg,rgba(201,168,106,.13) 0%,var(--surface) 68%)}
+    .phase-card.knockout{border-color:#5D78A8;background:linear-gradient(180deg,rgba(93,120,168,.16) 0%,var(--surface) 68%)}
+  }
 
   .note{font-size:11.5px;color:var(--faint); margin:2px 2px 12px; line-height:1.5}
   .logfilter-row{display:flex;align-items:center;gap:8px;margin:0 2px 14px;font-size:12px}
   .logfilter-row label{color:var(--muted);font-weight:600}
   .logfilter-row select{font-family:var(--ui);font-size:12.5px;font-weight:700;padding:6px 10px;
     border-radius:7px;border:1px solid var(--line-2);background:var(--surface);color:var(--paper)}
+  .depth-toggle{margin-left:auto;background:none;border:none;font-family:var(--ui);font-size:11.5px;
+    font-weight:600;color:var(--muted);cursor:pointer;padding:6px 2px;white-space:nowrap;
+    -webkit-tap-highlight-color:transparent}
+  .depth-toggle .act{color:var(--blue);font-weight:700;text-decoration:underline}
+  .depth-toggle:disabled{opacity:.55;cursor:default}
+  .depth-toggle:disabled .act{text-decoration:none}
   .segrow{display:flex; align-items:center; gap:6px; margin:0 2px 12px; flex-wrap:wrap}
+  .segrow.tzrow{margin-bottom:8px;justify-content:space-between;flex-wrap:nowrap;gap:8px}
+  .tzrow-main{display:flex;align-items:center;gap:6px;flex:0 1 auto;min-width:0}
+  .segrow.tzrow .score-status{margin-left:auto;text-align:right;min-width:0;max-width:52%}
   .segrow .lbl{font-size:11px;color:var(--muted);font-weight:700;margin-right:2px}
   .seg{background:var(--surface); border:1px solid var(--line-2); color:var(--muted);
     border-radius:8px; padding:7px 11px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:var(--ui)}
   .seg.active{background:var(--red); border-color:transparent; color:#fff}
   .seg:active{transform:translateY(1px)}
+  .seg.tzseg{padding:6px 12px;font-size:12px;border-radius:8px}
 
   /* ---------- Mobile font boost ---------- */
   @media(max-width:768px){
@@ -203,18 +458,27 @@
     .prize{font-size:10px!important}
     .pmeta{font-size:10px!important}
     .rank{font-size:14px!important}
-    .tab{font-size:15px!important;padding:12px 4px!important}
+    .tabs{display:flex!important;flex-wrap:nowrap;gap:4px;justify-content:space-between;align-items:stretch}
+    .tab{flex:1 1 0;display:flex;align-items:center;justify-content:center;min-height:48px;
+      font-size:12.5px!important;padding:10px 3px!important;line-height:1.1;white-space:nowrap}
+    .tab[data-tab="table"]{white-space:normal}
+    #bonusTab.tab-highlight:not(.active){padding:9px 3px 8px!important}
+    .phase-tab{font-size:14px!important;padding:10px 7px 8px!important}
+    .phase-tab .phase-sub{font-size:10px!important}
     .seg{font-size:14px!important;padding:13px 16px!important}
+    .seg.tzseg{font-size:13px!important;padding:9px 13px!important}
     .crw-btn{font-size:14px!important;padding:13px 16px!important}
-    .actingrow{padding:14px 12px!important}
+    .actingrow{padding:10px 12px!important}
     .dayhdr .d{font-size:15px!important}
     .daysummary{font-size:12px!important}
     .note{font-size:14px!important}
     .note.legend ul li{font-size:14px!important}
     .idname{font-size:16px!important;padding:16px 10px!important}
     .wrow .nm{font-size:16px!important}
+    .pk-row .nm,.bbw-wager-row .nm{font-size:16px!important}
     .wrow .pk{font-size:18px!important}
     .acting-name{font-size:17px!important}
+    .bbw-confirm-who{font-size:16px!important;max-width:58%!important}
     .acting-label{font-size:12px!important}
     .iconbtn{font-size:13px!important;padding:8px 11px!important}
     .whdr{font-size:12px!important}
@@ -229,6 +493,10 @@
     .lt-head,.lt-row{gap:3px!important}
     .logtext{font-size:14px!important}
     .logtime{font-size:12px!important}
+    .sheet h2 .gbw-other-names-min{font-size:13px!important}
+    .sheet .gbw-other-names-sub{font-size:14px!important}
+    .gbw-topscorers-btn{font-size:15px!important;padding:11px 22px!important}
+    .bb-subtab-icon{width:36px;height:36px}
     .wrap{max-width:100%!important}
   }
   /* Group Standings (gs-) */
@@ -258,6 +526,7 @@
   .gs-sep{color:var(--muted);font-style:normal;padding:0 2px;opacity:.55}
   /* Pot card */
   .pot-card{background:linear-gradient(135deg,#E8B800,#FFD700);border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:center;color:#1a1200;box-shadow:0 2px 12px rgba(255,215,0,.4)}
+  .pot-card .pot-title{font-size:13px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
   .pot-card .pot-amt{font-size:24px;font-weight:900;font-family:var(--mono);letter-spacing:-.01em}
   .pot-card .pot-sub{font-size:12px;font-weight:700;opacity:.7;margin-top:2px}
   /* Scoring key */
@@ -356,7 +625,8 @@
   .pk-row.pk-editable{background:var(--green-dim)}
   .pk-row.pk-editable:active{background:var(--surface-2)}
   .pk-row .who{min-width:0}
-  .pk-row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pk-row .nm,.bbw-wager-row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;color:var(--paper)}
   .pk-row .sub2{font-size:10px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pk-row .sub2 .recw{color:var(--green);font-weight:700} .pk-row .sub2 .recl{font-weight:700}
   .pk-row .pkk{font-family:var(--mono);font-weight:800;font-size:14px;text-align:right}
@@ -453,9 +723,297 @@
   .gh-body{margin:6px 0 0;padding-left:18px;font-size:11px;color:var(--faint);line-height:1.5}
   .gh-body li{margin:3px 0}
   .collapse-bar{display:flex;justify-content:flex-end;align-items:center;margin:-6px 2px 8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-  .collapse-bar.gs-bar{justify-content:space-between}
+  .collapse-bar.gs-bar{justify-content:flex-start;gap:8px}
+
+  /* ===== Tournament wagers (World Cup Winner / Golden Boot) ===== */
+  .bb-banner{background:#E0F2EF;border:1px solid #9FD4CC;color:var(--red);
+    font-weight:700;font-size:12.5px;text-align:center;border-radius:10px;padding:9px 12px;margin-bottom:12px}
+  @media(prefers-color-scheme:dark){.bb-banner{background:#11302C;border-color:#1F4F45;color:var(--red)}}
+  /* Gentle attention-pulse (slow opacity breathe, NOT a hard on/off flash —
+     a continuous hard flash reads as alarming/nagging, not "classy"). Applied
+     only while the acting player hasn't completed BOTH bets; stops the moment
+     they have (updateBonusPulse, called from renderActing). */
+  .bb-banner.bb-pulse{animation:bb-pulse 2.6s ease-in-out infinite}
+  @keyframes bb-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+  .bb-subtabs{display:flex;gap:8px;margin-bottom:0;position:sticky;
+    top:var(--appbar-sticky-h, 0px);z-index:35;background:var(--bg);
+    padding:6px 0 4px;margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}
+  .bb-subtab{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    text-align:center;padding:14px 6px;font-size:20px;font-weight:800;
+    color:var(--muted);border:2px solid var(--line-2);background:var(--surface);
+    border-radius:11px;cursor:pointer;font-family:var(--ui);letter-spacing:.01em;
+    position:relative;z-index:1;line-height:1.2}
+  .bb-subtab-icon{width:24px;height:24px;object-fit:contain;flex:none;display:block}
+  /* Once either bet is selected, the OTHER tab still needs to look available
+     (not disabled) — a light tint + visible border, not a washed-out grey-on-
+     grey ghost. Opacity-only dimming (the earlier attempt) made the inactive
+     tab look broken; this keeps it legible and clearly tappable. */
+  .bb-subtabs:has(.active) .bb-subtab:not(.active){color:var(--faint);border-color:var(--line)}
+  /* Each bet gets its OWN color identity — Golden Boot = gold (the trophy/
+     award association fits the "boot" prize better than the country pick),
+     World Cup Winner = blue. The ACTIVE TAB carries the STRONG, solid fill
+     (this is the dominant color statement); the panel below gets only a mild
+     wash; the pot card gets a DISTINCT, visible tint of its own — lighter
+     than the tab but clearly its own card against the panel, not the same
+     shade (an earlier pass made pot and panel nearly indistinguishable).
+     Bottom corners flatten + border-bottom erases so tab and panel visually
+     FUSE into one attached folder-tab shape. */
+  .bb-subtab.active{border-bottom-left-radius:0;border-bottom-right-radius:0;
+    border-bottom-color:transparent;margin-bottom:-2px}
+  .bb-subtab[data-bbsub="winner"].active{color:#fff;border-color:#4A8FD0;background:#4A8FD0}
+  .bb-subtab[data-bbsub="goldenboot"].active{color:#3a2c00;border-color:#C9A227;background:#C9A227}
+  .bb-sub-view{display:none}
+  .bb-sub-view.active{display:block;border-radius:0 0 14px 14px;padding:14px 12px 12px;
+    margin:0 -12px;border:2px solid;border-top-width:0}
+  #bbsub-winner.active{background:#F4F9FE;border-color:var(--blue)}
+  #bbsub-goldenboot.active{background:#FFF6DE;border-color:#C9A227}
+  @media(prefers-color-scheme:dark){
+    #bbsub-winner.active{background:#10181F}
+    #bbsub-goldenboot.active{background:#1C1A10}
+    .bb-subtab[data-bbsub="winner"].active{border-color:var(--blue);background:var(--blue)}
+  }
+  /* Pot card: a step down from the tab's bold fill, but a step UP from the
+     panel's wash — needs to read as its own distinct card sitting ON the
+     panel, not blend into it. Smaller/plainer text too (per user direction)
+     so the card doesn't visually compete with the sub-tab above it. */
+  #winnerPotCard .pot-amt,#gbPotCard .pot-amt{font-size:17px;font-weight:800;
+    font-family:var(--ui);letter-spacing:0}
+  #winnerPotCard{background:#CFE3F6;color:#0d2d4a;box-shadow:0 1px 5px rgba(43,121,199,.18)}
+  #gbPotCard{background:#F3DD8C;color:#3a2c00;box-shadow:0 1px 5px rgba(201,162,39,.22)}
+  .gbw-live-card{display:flex;align-items:center;justify-content:center;
+    border:1.5px solid #C9A227;border-radius:12px;background:var(--surface);
+    padding:12px 14px;margin:-2px auto 10px;max-width:280px;cursor:pointer;color:var(--paper);
+    box-shadow:0 1px 5px rgba(201,162,39,.14);font-family:var(--ui);text-align:center}
+  .gbw-live-card:active{transform:translateY(1px);background:var(--surface-2)}
+  .gbw-live-title{display:block;font-size:14px;font-weight:850;color:#8A6815}
+  .gbw-lb-card{display:block;width:100%;text-align:left;border:1px solid var(--line-2);
+    border-radius:11px;background:var(--surface);color:var(--paper);padding:12px;
+    margin-bottom:8px;font-family:var(--ui);cursor:pointer}
+  .gbw-lb-card.live{background:var(--green-dim);border-color:rgba(52,194,108,.45)}
+  .gbw-lb-card:active{background:var(--surface-2)}
+  .gbw-lb-card.live:active{background:color-mix(in srgb,var(--green) 16%,var(--surface))}
+  .gbw-lb-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .gbw-lb-name{font-size:15px;font-weight:800;min-width:0}
+  .gbw-lb-rank{font-size:12px;font-weight:900;color:var(--muted);white-space:nowrap}
+  .gbw-lb-rank.live{color:var(--green)}
+  .gbw-lb-pick{font-size:13px;font-weight:750;margin-top:5px;color:var(--paper)}
+  .gbw-lb-sub{font-size:11.5px;font-weight:650;margin-top:3px;color:var(--blue)}
+  .gbw-lb-wager{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;
+    border-top:1px solid var(--line);padding:10px 2px}
+  .gbw-lb-wager:first-child{border-top:none}
+  .gbw-lb-wager .p{display:block;font-size:13px;font-weight:800;color:var(--paper)}
+  .gbw-lb-wager .m{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-top:2px}
+  .gbw-lb-empty{font-size:13px;color:var(--muted);text-align:center;padding:20px 8px}
+  @media(prefers-color-scheme:dark){
+    #winnerPotCard{background:#1C3A52;color:#BFDBF5}
+    #gbPotCard{background:#3D3110;color:#F0D27A}
+    .gbw-live-card{background:#242014;border-color:#7E661D;box-shadow:0 1px 5px rgba(0,0,0,.18)}
+    .gbw-live-title{color:#F0D27A}
+  }
+  .bb-placeholder{color:var(--faint);font-size:13px;text-align:center;padding:30px 10px;
+    background:var(--surface);border:1px solid var(--line-2);border-radius:10px;opacity:.85}
+
+  /* ===== World Cup Winner (Sprint 2) ===== */
+  .bbw-toggle{display:flex;gap:6px;margin:14px 0 10px;position:sticky;top:0;z-index:5;
+    background:inherit;padding:6px 0 8px;border-bottom:1px solid rgba(0,0,0,.04)}
+  @media(prefers-color-scheme:dark){.bbw-toggle{border-bottom-color:rgba(255,255,255,.08)}}
+  .bbw-tgl{flex:1;text-align:center;padding:10px 8px;font-size:14px;font-weight:800;
+    color:var(--muted);border:1.5px solid var(--line-2);background:var(--surface);
+    border-radius:9px;cursor:pointer;font-family:var(--ui);letter-spacing:.01em}
+  /* The active inner view should read as strongly selected, matching the
+     filled blue treatment of the active "World Cup Winner" Bonus sub-tab. */
+  .bbw-tgl.active{color:#fff;border-color:var(--blue);background:var(--blue)}
+
+  /* Country cards — 7 FIXED (alphabetical, never removed/reordered) + a
+     demarc + a DYNAMIC promoted zone (one card per non-fixed team with ≥1
+     CURRENT active picker; appears on first pick, vanishes when empty;
+     chronological by (re-)promotion time, never re-sorted by pick count —
+     "easier on the eyes" per the locked design). Two-zone row: left side
+     (flag+name+code) is the PICK action; right side ("N wagers") is the
+     EXPAND toggle — kept deliberately separate (a demarc line marks the
+     boundary) so browsing who-picked-what can't accidentally fire a wager. */
+  .bbw-card{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);align-items:stretch;
+    border:1.5px solid var(--line-2);border-radius:11px;overflow:hidden;
+    background:var(--surface)}
+  .bbw-card-unit{margin-bottom:8px}
+  .bbw-card-unit .bbw-card{margin-bottom:0}
+  .bbw-card-unit.expanded .bbw-card{border-bottom:none;border-radius:11px 11px 0 0}
+  .bbw-card-unit.expanded .bbw-wagerzone{background:var(--teal-dim);
+    background:color-mix(in srgb,var(--teal) 12%,var(--surface-2));
+    border-left-color:var(--teal);box-shadow:inset 0 0 0 1.5px var(--teal)}
+  .bbw-card-unit.expanded .bbw-wagerzone .n,.bbw-card-unit.expanded .bbw-wagerzone .lbl,.bbw-card-unit.expanded .bbw-wagerzone .chev{color:var(--teal)}
+  .bbw-card-unit.expanded .bbw-wagerlist{border:1.5px solid var(--teal);border-top:1.5px solid var(--teal);
+    border-radius:0 0 11px 11px;background:var(--teal-dim);
+    background:color-mix(in srgb,var(--teal) 6%,var(--surface));
+    padding:4px 10px 10px;margin-top:0}
+  .bbw-pick{display:flex;align-items:center;gap:8px;padding:11px 12px;cursor:pointer;min-width:0}
+  .bbw-flag{font-size:18px;flex:none}
+  .bbw-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .bbw-code{color:var(--muted);font-size:12px;font-weight:700;flex:none}
+  .bbw-stage{color:var(--faint);font-size:11.5px;font-weight:600;flex:none;margin-left:4px}
+  .bbw-wagerzone{display:flex;align-items:center;gap:5px;padding:11px 14px;cursor:pointer;
+    border-left:1.5px solid var(--line-2);background:var(--surface-2);min-width:0;
+    justify-content:center;align-self:stretch;box-sizing:border-box}
+  .bbw-wagerzone .n{font-weight:600;font-size:13px;color:var(--blue)}
+  .bbw-wagerzone .lbl{font-size:11px;color:var(--blue);font-weight:600}
+  .bbw-wagerzone .chev{font-size:11px;color:var(--muted);margin-left:2px}
+  .bbw-card.mine{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset}
+  .bbw-demarc{border:none;border-top:1px dashed var(--line-2);margin:4px 0 12px}
+  .bbw-wagerlist{padding:4px 10px 10px}
+  .bbw-wager-row{display:flex;justify-content:space-between;align-items:center;
+    padding:7px 4px;border-top:1px solid var(--line)}
+  .bbw-wager-row:first-child{border-top:none}
+  .bbw-wager-row-empty{color:var(--muted);font-size:13px}
+  .bbw-wager-row .who{min-width:0;flex:1;display:flex;align-items:center;gap:6px}
+  .bbw-wager-row-editable{cursor:pointer;background:var(--green-dim);border-left:3px solid var(--green);
+    border-radius:8px;margin:2px 0;padding:9px 8px 9px 10px}
+  .bbw-wager-row-editable:active{background:var(--surface-2)}
+  .bbw-yours{font-size:10px;font-weight:800;color:var(--green);text-transform:uppercase;
+    letter-spacing:.04em;white-space:nowrap;flex:none}
+  .bbw-wagerer-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:10px;align-items:stretch}
+  .bbw-wagerer-name-col{min-width:0;align-self:start}
+  .bbw-wagerer-count{display:block;margin-top:2px;color:var(--faint);font-size:10px;font-weight:600}
+  .bbw-wagerer-row .bbw-team-list{justify-content:flex-start;width:100%;min-width:0;
+    align-self:stretch;box-sizing:border-box}
+  .bbw-team-list{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;min-width:0}
+  .bbw-team-pill{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line-2);
+    border-radius:999px;padding:3px 7px;background:var(--surface-2);color:var(--paper);
+    font-size:12px;font-weight:700}
+  .bbw-team-pill-editable{cursor:pointer;background:var(--green-dim);
+    border-color:rgba(52,194,108,.35)}
+  .bbw-team-pill-editable:active{background:var(--surface-2)}
+  .bbw-remove{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
+    border:1px solid rgba(230,77,77,.28);border-radius:999px;background:rgba(230,77,77,.08);
+    color:var(--red);font-size:13px;font-weight:900;line-height:1;cursor:pointer;padding:0;margin-left:2px}
+  @media(prefers-color-scheme:dark){.bbw-remove{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.12)}}
+  .bbw-expandall{display:flex;justify-content:flex-end;margin-bottom:8px}
+  .bbw-expandall button{font-size:11.5px;font-weight:700;color:var(--blue);background:none;
+    border:none;cursor:pointer;padding:4px 2px}
+
+  /* "Other team..." selector card — opens a sheet with a flag+code grid,
+     3-per-row (locked default — wide enough that long names never crowd a
+     short one, since only flag+code shows; generous gaps prioritized over
+     squeezing in a 4th column, per the tap-accuracy reasoning). */
+  .bbw-selector{display:flex;align-items:center;gap:8px;padding:16px 14px;cursor:pointer;
+    border:2.5px dashed var(--blue);border-radius:11px;color:var(--blue);font-weight:800;
+    font-size:14px;margin-bottom:8px;justify-content:center;background:#E9F4FF;min-height:54px}
+  .bbw-selector-chev{margin-left:auto;flex:none;font-size:20px;line-height:1;font-weight:800}
+  @media(prefers-color-scheme:dark){.bbw-selector{background:#102235;color:var(--blue);
+    border-color:rgba(91,167,232,.85)}}
+  .bbw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px;padding:6px 2px 16px}
+  .bbw-tile{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px;
+    border:1.5px solid var(--line-2);border-radius:11px;cursor:pointer;background:var(--surface)}
+  .bbw-tile .f{font-size:22px}
+  .bbw-tile .c{font-size:12px;font-weight:700;color:var(--muted)}
+
+  /* Universal confirm modal — flag + full name + code, EVERY entry point
+     (shortlist card, promoted card, or the grid) leads here identically. */
+  .bbw-confirm{position:relative;text-align:center;padding:34px 20px 28px;margin-bottom:8px}
+  .bbw-confirm-who{position:absolute;top:10px;left:12px;max-width:55%;font-size:15px;
+    font-weight:800;color:var(--paper);text-align:left;line-height:1.2;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bbw-confirm .f{font-size:40px;margin-bottom:6px}
+  .bbw-confirm .q{font-size:16px;font-weight:800;margin-bottom:2px}
+  .bbw-confirm .code{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:22px}
+  .bbw-confirm .row{display:flex;gap:10px}
+  .bbw-confirm button{flex:1;padding:12px;border-radius:10px;font-weight:800;font-size:14px;
+    border:1.5px solid var(--line-2);cursor:pointer;font-family:var(--ui)}
+  .bbw-confirm button:not(.yes){background:var(--surface-2);color:var(--paper)}
+  @media(prefers-color-scheme:dark){
+    .bbw-confirm button:not(.yes){border-color:rgba(255,255,255,.24);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+  }
+  .bbw-confirm button.yes{background:var(--blue);border-color:var(--blue);color:#fff}
+  /* Admin "for whom" proxy step — same shape as the confirm modal, one extra
+     screen before it when the acting player is an admin. */
+  .bbw-forwhom{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:18px 4px}
+  .bbw-forwhom .who{display:flex;align-items:center;justify-content:space-between;
+    padding:11px 12px;border:1.5px solid var(--line-2);border-radius:10px;min-width:0;
+    cursor:pointer;font-weight:700;font-size:13.5px}
+  .bbw-forwhom .who.self{color:var(--blue);border-color:var(--blue)}
+
+  /* ===== Golden Boot (WCW-style multi-player wagers) ===== */
+  /* Golden Boot toolbar: Top Scorers centered, Expand all on the right */
+  .gbw-toolbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+    gap:8px;margin:-2px 0 10px}
+  .gbw-toolbar-side{min-width:0}
+  .gbw-toolbar-side-end{display:flex;justify-content:flex-end}
+  .gbw-toolbar .bbw-expandall{margin-bottom:0}
+  .gbw-topscorers-btn{justify-self:center;font-size:14px;font-weight:800;
+    color:var(--green);background:var(--green-dim);border:1.5px solid var(--green);
+    border-radius:999px;cursor:pointer;padding:10px 18px;min-height:44px;
+    line-height:1.2;font-family:var(--ui);letter-spacing:.02em;white-space:nowrap}
+  .gbw-topscorers-btn:active{opacity:.88}
+  .gbw-card .bbw-pick{gap:7px}
+  .gbw-name-wrap{min-width:0;display:flex;align-items:baseline;gap:5px;overflow:hidden}
+  .gbw-gls{font-size:11px;font-weight:800;color:#B8860B;white-space:nowrap;flex:none}
+  .gbw-card .bbw-stage,.gbw-tile .meta{font-size:12px;color:#B8860B;font-weight:800}
+  .gbw-card .bbw-stage{margin-left:auto}
+  .gbw-selector{border-color:#C9A227;color:#8A6A00;background:#FFF4C9}
+  @media(prefers-color-scheme:dark){.gbw-selector{background:#2A240D;color:#F0D27A;border-color:rgba(240,210,122,.8)}}
+  .gbw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:6px 2px 16px}
+  .gbw-tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px 10px;
+    border:1.5px solid var(--line-2);border-radius:11px;cursor:pointer;background:var(--surface);min-width:0}
+  .gbw-tile .nm{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .gbw-pill-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gbw-wagerer-row{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}
+  .gbw-wagerer-row .bbw-wagerer-name-col,.gbw-wagerer-row .who{overflow:hidden}
+  .gbw-wagerer-row .nm{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gbw-confirm-name{font-size:17px;font-weight:800;margin-bottom:2px}
+  .gbw-confirm-meta{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:18px}
+  .sheet h2 .gbw-other-names-min{display:block;margin-top:3px;font-size:12px;font-weight:700;
+    color:var(--muted);letter-spacing:0;text-transform:none;padding-right:0}
+  .sheet .gbw-other-names-sub{color:var(--blue);font-weight:700}
+
+  /* #1: Group Standings + Top Scorers grouped left as a pair; each sizes to its
+     OWN text (no forced 50/50, which starved the longer "Group Standings" label
+     and wrapped it) and never wraps. Collapse-all stays compact on the right. */
+  #groupStandingsBtn,#topScorersBtn{flex:0 1 auto;white-space:nowrap;text-align:center}
   #groupStandingsBtn{background:transparent;border:1.5px solid var(--blue);color:var(--blue);font-weight:700;position:relative}
+  #topScorersBtn{background:transparent;border:1.5px solid #C9A227;color:#C9A227;font-weight:700;position:relative}
+  #collapseAllBtn{flex:none;margin-left:auto}
+  .ts-diag{font-family:var(--ui);font-size:12.5px;color:var(--muted);background:var(--surface);
+    border:1px solid var(--line-2);border-radius:8px;padding:10px 12px;margin:8px 2px;line-height:1.5}
+  /* #2: clear the sticky ✕ so the glossary text never renders under it */
+  /* Top Scorers glossary — a real two-column grid (label | description) rather
+     than one flowing hanging-indent paragraph. Each row wraps independently,
+     so "Glossary:" always starts flush in column A regardless of how many
+     lines column B's text wraps to — no more text-indent/<br> alignment hacks,
+     and no more accidental clipping from stacking horizontal paddings. The
+     first row's right side gets breathing room from the sticky close ✕. */
+  .ts-gloss-grid{display:grid;grid-template-columns:auto 1fr;column-gap:8px;row-gap:6px;
+    margin:8px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line-2);
+    font-size:10.5px;color:var(--faint);line-height:1.5}
+  .ts-gloss-lbl{font-weight:800;color:var(--muted);white-space:nowrap}
+  .ts-gloss-grid > span:nth-child(2){padding-right:40px}  /* clears the sticky ✕, first row only */
+  /* Loading state — Apps Script round-trips run ~1.5-2.5s, so signal "fetching"
+     clearly rather than leaving a bare "Loading…" that can read as stuck. */
+  .ts-load{display:flex;flex-direction:column;align-items:center;gap:12px;padding:38px 0 30px;color:var(--muted);font-size:13px}
+  .ts-spin{width:26px;height:26px;border:3px solid var(--line-2);border-top-color:var(--blue);
+    border-radius:50%;animation:ts-spin .8s linear infinite}
+  @keyframes ts-spin{to{transform:rotate(360deg)}}
+  /* #3: rank · [flag name code as one left group] · G AS Min · MP */
+  .ts-row{display:grid;grid-template-columns:22px minmax(0,1fr) 40px 38px 44px 40px;
+    gap:6px;align-items:center;padding:7px 3px;border-bottom:1px solid var(--line-2);font-size:13px}
+  .ts-row.no-mp{grid-template-columns:22px minmax(0,1fr) 40px 38px 44px}
+  .ts-head{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding-bottom:7px}
+  .ts-rank{color:var(--muted);font-weight:700;text-align:right;font-variant-numeric:tabular-nums;margin-right:5px}
+  .ts-player{display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden}
+  .ts-flag{flex:none;font-size:14px}
+  .ts-nm{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+  .ts-code{flex:none;color:var(--muted);font-size:11px;font-weight:700}
+  .ts-stat{font-variant-numeric:tabular-nums;font-weight:700;text-align:right}
+  .ts-g{display:inline-block;font-size:14px;color:#B8860B;border-right:1px solid var(--line-2);margin-right:9px;padding-right:9px}  /* Goals — the PRIMARY stat, distinct gold; demarcation line (mirrors .ts-mp's left-border) visually separates "what decides it" from the AS/Min tiebreaker columns. display:inline-block so padding-right actually creates a gap before the border (a plain inline span's padding can collapse visually against right-aligned text). */
+  /* #4: blue stat headers (Group-Standings pattern); MP demarcated + muted */
+  .ts-head .ts-stat{color:var(--blue)}
+  .ts-head .ts-g{color:#B8860B}  /* overrides the blue tiebreaker-header color for Goals specifically */
+  .ts-mp{color:var(--muted);font-weight:600;border-left:1px solid var(--line-2);padding-left:9px;margin-left:3px}
+  .ts-head .ts-mp{color:var(--muted)}
   .gs-new{position:absolute;top:-7px;right:-6px;background:#FFB300;color:#1a1200;font-size:8px;font-weight:800;letter-spacing:.04em;padding:1px 5px;border-radius:8px;text-transform:uppercase;box-shadow:0 1px 4px rgba(255,179,0,.5)}
+  .phase-tab .gs-new{top:-5px;right:4px}
+  .tab .gs-new{top:-6px;right:-4px}
+  .bb-subtab .gs-new{top:-5px;right:6px}
   #collapseAllBtn{background:var(--blue);border-color:transparent;color:#fff}
   .wlist .lhdr{margin:0 2px 10px}
   .lhdr-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -551,23 +1109,40 @@
       <button class="iconbtn red" id="refreshBtn">↻ Scores</button>
     </div>
     <div class="actingrow" id="actingrow">
-      <span class="acting-label">Player:</span>
-      <span class="acting-name" id="actingName">—</span>
-      <button class="acting-reset" id="actingReset" title="Not you? Switch identity">(not you?)</button>
-      <button class="crw-btn" id="copyRecentWagersBtn" style="display:none"><span class="gs-new">new</span>Copy Recent Wagers</button>
+      <div class="acting-main">
+        <span class="acting-label">Player:</span>
+        <span class="acting-name" id="actingName">—</span>
+        <button class="acting-reset" id="actingReset" title="Not you? Switch identity">(not you?)</button>
+      </div>
+      <button class="crw-btn" id="copyRecentWagersBtn" style="display:none">Copy Recent Wagers</button>
     </div>
-    <div class="tabs">
-      <button class="tab active" data-tab="schedule">Schedule</button>
-      <button class="tab" data-tab="table">Participants</button>
-      <button class="tab" data-tab="log">Activity</button>
+    <div class="phase-wrap">
+      <div class="phase-tabs">
+        <button class="phase-tab active" data-phase="group">Group Phase<span class="phase-sub">Current</span></button>
+        <button class="phase-tab" data-phase="knockout">Knockout Phase<span class="phase-sub">Coming soon</span></button>
+      </div>
+      <div class="phase-card group" id="phaseCard">
+        <div class="tabs">
+          <button class="tab active" data-tab="schedule">Schedule</button>
+          <button class="tab" data-tab="table">Match Leaderboard</button>
+          <button class="tab" data-tab="bonus" id="bonusTab"><span class="gs-new">new</span>Tournament</button>
+          <button class="tab" data-tab="log">Activity</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="view active" id="view-schedule">
-    <div class="segrow"><span class="lbl">Times in</span>
-      <button class="seg active" data-tz="PDT">California · PDT</button>
-      <button class="seg" data-tz="IST">India · IST</button></div>
-    <div class="freshline stale" id="freshline">Scores not refreshed yet — tap ↻ Scores</div>
+    <div class="segrow tzrow">
+      <div class="tzrow-main">
+        <button class="seg tzseg active" data-tz="PDT">California · PDT</button>
+        <button class="seg tzseg" data-tz="IST">India · IST</button>
+      </div>
+      <div class="score-status stale" id="scoreStatus">
+        <span class="score-state"><i class="score-dot"></i><span id="scoreStatusLabel">Not refreshed</span></span>
+        <span class="score-time" id="scoreStatusTime">Tap ↻ Scores</span>
+      </div>
+    </div>
     <div class="gh-wrap">
       <div class="note legend gh-always">Wager closes the moment a match kicks off.
         <button class="gh-toggle" id="ghToggle" aria-expanded="false">more <span class="gh-chev">▾</span></button>
@@ -580,7 +1155,8 @@
       </ul>
     </div>
     <div class="collapse-bar gs-bar">
-      <button class="seg" id="groupStandingsBtn">📊 Group Standings</button>
+      <button class="seg" id="groupStandingsBtn">Group Standings</button>
+      <button class="seg" id="topScorersBtn"><span class="gs-new">new</span>Top Scorers</button>
       <button class="seg" id="collapseAllBtn">Collapse all</button>
     </div>
     <div id="schedule"></div>
@@ -597,11 +1173,41 @@
     <div class="tablecard" id="leaderboard"></div>
   </div>
 
+  <div class="view" id="view-bonus">
+    <div class="bb-banner" id="bbBanner">Picks LOCK when the KnockOut stage begins</div>
+    <div class="bb-subtabs">
+      <button class="bb-subtab" data-bbsub="winner"><span class="gs-new">new</span>🏆 World Cup Winner</button>
+      <button class="bb-subtab active" data-bbsub="goldenboot"><span class="gs-new">new</span><img class="bb-subtab-icon" src="golden-boot-icon.png" alt=""> Golden Boot</button>
+    </div>
+    <div class="bb-sub-view" id="bbsub-winner">
+      <div class="pot-card" id="winnerPotCard"></div>
+      <div class="bbw-toggle">
+        <button class="bbw-tgl active" data-bbwview="country">By Country</button>
+        <button class="bbw-tgl" data-bbwview="wagerer">By Wagerer</button>
+      </div>
+      <div id="bbwCountryView"></div>
+      <div id="bbwWagererView" style="display:none"></div>
+    </div>
+    <div class="bb-sub-view active" id="bbsub-goldenboot">
+      <div class="pot-card" id="gbPotCard"></div>
+      <button type="button" class="gbw-live-card" id="gbwLiveLeaderboardBtn">
+        <span class="gbw-live-title">Live Golden Boot Leaderboard</span>
+      </button>
+      <div class="bbw-toggle gbw-toggle">
+        <button class="bbw-tgl gbw-tgl active" data-gbwview="player">By Player</button>
+        <button class="bbw-tgl gbw-tgl" data-gbwview="wagerer">By Wagerer</button>
+      </div>
+      <div id="gbwPlayerView"></div>
+      <div id="gbwWagererView" style="display:none"></div>
+    </div>
+  </div>
+
   <div class="view" id="view-log">
     <div class="note">Every wager, edit, score refresh and result — permanent and in order. Backfilled (post-kickoff) entries are flagged.</div>
     <div class="logfilter-row">
       <label for="logFilterSel">Show:</label>
       <select id="logFilterSel"><option value="all">All</option></select>
+      <button id="logDepthToggle" class="depth-toggle" style="display:none"></button>
     </div>
     <div id="logfeed"></div>
   </div>
@@ -748,7 +1354,13 @@ function slotLabel(code){
 const ADMINS = ["Venu Nair","Augustine Chandy","Anil Parameswaran"];
 
 let STATE=null, acting=null;
-let TZSTATE="PDT", SORTBY="pts", LOGFILTER="all", IDENTITY_CONFIRMED=false, SAVE_IN_FLIGHT=false;
+let TZSTATE="PDT", SORTBY="pts", LOGFILTER="all", PHASE="group", IDENTITY_CONFIRMED=false, SAVE_IN_FLIGHT=false;
+// Activity-log depth: "recent" shows the last LOG_LIVE rows, "all" shows the
+// full log (fetched on demand via the Show-all toggle). logFull tracks whether
+// STATE.log currently holds the full log this session. LOG_LIVE must match
+// Code.gs's LOG_LIVE_LIMIT.
+let LOGVIEW="recent", logFull=false;
+const LOG_LIVE=200;
 let dayState={};   // dateLabel -> "open" | "collapsed" (sticky within session)
 const TZS={ PDT:{label:"PDT", off:-420}, IST:{label:"IST", off:330} }; // minutes from UTC
 const _DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -759,6 +1371,12 @@ function disp(koUTC){
   const ap=h>=12?"PM":"AM"; let h12=h%12; if(h12===0) h12=12;
   return { date:`${_DAYS[d.getUTCDay()]}, ${_MONS[d.getUTCMonth()]} ${d.getUTCDate()}`,
            time:`${h12}:${String(m).padStart(2,"0")} ${ap}`, tz:TZS[TZSTATE].label };
+}
+function dispCompact(utcMs){
+  const d=new Date(new Date(utcMs).getTime()+TZS[TZSTATE].off*60000);
+  let h=d.getUTCHours(); const m=d.getUTCMinutes();
+  const ap=h>=12?"PM":"AM"; let h12=h%12; if(h12===0) h12=12;
+  return `${_MONS[d.getUTCMonth()]} ${d.getUTCDate()} · ${h12}:${String(m).padStart(2,"0")} ${ap} ${TZS[TZSTATE].label}`;
 }
 
 /* ---------- Helpers ---------- */
@@ -799,7 +1417,7 @@ function standings(){
       else { row.pts+=pts; if(pts===6) row.w6++; else if(pts===3) row.w3++; else row.l++; }
     }
   }
-  rows.sort((a,b)=> b.pts-a.pts || (b.w6+b.w3)-(a.w6+a.w3) || a.name.localeCompare(b.name));
+  rows.sort((a,b)=> b.pts-a.pts || b.w6-a.w6 || a.name.localeCompare(b.name));
   return rows;
 }
 
@@ -854,6 +1472,155 @@ function groupStandings(){
   return out;
 }
 
+// Top Scorers display rules — shared with Golden Boot pick list later.
+const TOP_SCORERS_MIN_GLS = 2;
+
+function topScorersCmp(a, b) {
+  return (a.rank != null ? a.rank : 9999) - (b.rank != null ? b.rank : 9999);
+}
+
+function sortTopScorersForDisplay(rows) {
+  return rows.slice().sort(topScorersCmp);
+}
+
+function trimTop20WithGoalTies(rows) {
+  const sorted = rows.slice().sort(topScorersCmp);
+  if (sorted.length <= 20) return sorted;
+  const cutoffGoals = sorted[19].goals;
+  return sorted.filter((r, i) => i < 20 || r.goals === cutoffGoals);
+}
+
+function filterTopScorersForDisplay(scorers) {
+  return sortTopScorersForDisplay(trimTop20WithGoalTies(
+    (scorers || []).filter(s => s.goals >= TOP_SCORERS_MIN_GLS)
+  ));
+}
+
+// Golden Boot Other names eligibility — same min-GLS / top-20 window as Top Scorers
+// display, but no rank sort here (display order is last-name alphabetical).
+function goldenBootOtherNameCandidates(board) {
+  return trimTop20WithGoalTies(
+    (board || []).filter(s => (s.goals || 0) >= TOP_SCORERS_MIN_GLS)
+  );
+}
+
+function goldenBootMinGlsTitleSuffix() {
+  return `(min. ${TOP_SCORERS_MIN_GLS} goals scored)`;
+}
+
+function currentTopScorersBoard() {
+  return STATE.topScorers || [];
+}
+
+function topScorersHasMp(scorers) {
+  return (scorers || []).some(s => s.mp != null && s.mp !== "" && !isNaN(+s.mp));
+}
+
+function renderTopScorersSheet(r) {
+  let body = '<h2>⚽ Top Scorers</h2>';
+  if (!r || !r.ok) {
+    body += '<div class="sub">⚠ Couldn\'t load</div>'
+      + '<div class="ts-diag">'
+      + 'HTTP: ' + (r && r.httpCode !== undefined ? r.httpCode : '—') + '<br>'
+      + 'Detail: ' + esc(r ? (r.error || '') : 'no response')
+      + '</div>';
+    return body + '<div style="height:24px"></div>';
+  }
+  if (r.fetchedAt) {
+    const fd = disp(new Date(r.fetchedAt).getTime());
+    body += '<div class="sub">Updated ' + fd.date + ', ' + fd.time + ' ' + fd.tz + '</div>';
+  }
+  const visible = filterTopScorersForDisplay(r.scorers);
+  if (r.empty) {
+    body += '<div class="sub">Top scorers not available yet — try again shortly.</div>';
+  } else if (visible.length === 0) {
+    body += '<div class="sub">No players with ' + TOP_SCORERS_MIN_GLS + '+ goals yet.</div>';
+  }
+  const showMp = topScorersHasMp(r.scorers);
+  const rowCls = showMp ? 'ts-row' : 'ts-row no-mp';
+  const glossMp = showMp
+    ? ' <i class="gs-sep">·</i> MP matches'
+    : '';
+  body += '<div class="ts-gloss-grid">'
+    + '<span class="ts-gloss-lbl">Tie-breaking by:</span>'
+    + '<span>goals &gt; assists &gt; fewest minutes. Players tying on all '
+    + 'three share a rank. In-game penalties count, shootout goals '
+    + '&amp; own-goals do not.</span>'
+    + '<span class="ts-gloss-lbl">Glossary:</span>'
+    + '<span>GLS goals <i class="gs-sep">·</i> ASST assists '
+    + '<i class="gs-sep">·</i> Min minutes' + glossMp + '</span>'
+    + '</div>';
+  body += '<div class="' + rowCls + ' ts-head">'
+    + '<span class="ts-rank">#</span><span class="ts-player"></span>'
+    + '<span class="ts-stat ts-g">GLS</span><span class="ts-stat">ASST</span>'
+    + '<span class="ts-stat">Min</span>'
+    + (showMp ? '<span class="ts-stat ts-mp">MP</span>' : '')
+    + '</div>';
+  visible.forEach(s => {
+    body += '<div class="' + rowCls + '">'
+      + '<span class="ts-rank">' + s.rank + '</span>'
+      + '<span class="ts-player">'
+        + '<span class="ts-flag">' + teamFlag(s.team) + '</span>'
+        + '<span class="ts-nm">' + esc(s.name || '?') + '</span>'
+        + '<span class="ts-code">(' + teamCode(s.team) + ')</span>'
+      + '</span>'
+      + '<span class="ts-stat ts-g">' + (s.goals != null ? s.goals : '–') + '</span>'
+      + '<span class="ts-stat">' + (s.assists != null ? s.assists : '–') + '</span>'
+      + '<span class="ts-stat">' + (s.minutes != null ? s.minutes : '–') + '</span>'
+      + (showMp ? '<span class="ts-stat ts-mp">' + (s.mp != null ? s.mp : '–') + '</span>' : '')
+      + '</div>';
+  });
+  return body + '<div style="height:24px"></div>';
+}
+
+function applyTopScorersResponse(r){
+  if(r && r.ok){
+    STATE.topScorers = r.scorers || [];
+    renderTournamentSurface();
+  }
+}
+
+function initLiveWarm(isStale){
+  if(!TOKEN) return Promise.resolve();
+  const tasks = [];
+  if(isStale){
+    tasks.push(serverRefreshScores().then(r => {
+      if(!r || !r.ok) return;
+      STATE.results = Object.fromEntries(
+        Object.entries(r.results).map(([k,v]) => [+k, v])
+      );
+      applyLogResponse(r);
+      STATE.lastRefresh = Date.now();
+      renderScoreStatus();
+      renderAll();
+    }).catch(() => {}));
+  }
+  tasks.push(api("warmTopScorers", { token: TOKEN }).then(applyTopScorersResponse).catch(() => {}));
+  return Promise.allSettled(tasks);
+}
+
+function warmTopScorersSilent(){
+  return initLiveWarm(false);
+}
+
+async function showTopScorers(){
+  openSheet('<h2>⚽ Top Scorers</h2><div class="ts-load"><div class="ts-spin"></div>Loading top scorers…</div>');
+  try {
+    let r = await serverTopScorers();
+    if (r && r.ok && r.empty) {
+      r = await api("warmTopScorers", { token: TOKEN || "" });
+    }
+    if (r && r.ok) {
+      STATE.topScorers = r.scorers || [];
+      renderTournamentSurface();
+    }
+    openSheet(renderTopScorersSheet(r));
+  } catch (e) {
+    console.error("[topScorers]", e);
+    openSheet(renderTopScorersSheet({ ok: false, error: e.message || "Unexpected error" }));
+  }
+}
+
 function showGroupStandings(){
   const data = groupStandings();
   const gdCls = gd => gd>0?'gs-gdpos':(gd<0?'gs-neg':'gs-zero');
@@ -891,30 +1658,74 @@ function showGroupStandings(){
 }
 
 /* ---------- Renders ---------- */
+// Surface isolation rule for NEW/optional surfaces: a Tournament/bonus render
+// failure must stay inside that surface and never block the stable core tabs.
+function renderSafe(label, fn, mountId) {
+  try { fn(); }
+  catch (e) {
+    console.error("[render]", label, e);
+    if (mountId) {
+      const el = document.getElementById(mountId);
+      if (el) el.innerHTML = '<div class="sub">⚠ ' + esc(label) + ' unavailable</div>';
+    }
+  }
+}
+
 function renderActing(){
   const el=$("#actingName");
   if(el) el.textContent = memberName(acting);
   const al=$(".acting-label");
   if(al){
     if(IDENTITY_CONFIRMED){
-      al.style.display = "none"; // steady state: label's job is done, give the name more room
+      al.style.display = "none";
     } else {
       al.style.display = "";
       al.textContent = "Player:";
     }
   }
+  renderScoreStatus();
   updateCopyRecentWagersBtn();
+  renderSafe("Tournament banner", updateBonusPulse);
+  syncAppbarStickyOffset();
+  updateTournamentTabHighlight();
 }
 
-/* ---------- Copy Recent Wagers (admin-only for now — see macro rule) ---------- */
+function syncAppbarStickyOffset(){
+  const bar = document.querySelector(".appbar");
+  const h = bar ? bar.offsetHeight : 0;
+  document.documentElement.style.setProperty("--appbar-sticky-h", h + "px");
+  const sub = document.querySelector(".bb-subtabs");
+  document.documentElement.style.setProperty("--bb-subtabs-sticky-h", (sub ? sub.offsetHeight : 0) + "px");
+}
+
+function renderScoreStatus(){
+  const box = $("#scoreStatus"), label = $("#scoreStatusLabel"), time = $("#scoreStatusTime");
+  if(!box || !label || !time) return;
+  if(STATE && STATE.lastRefresh){
+    box.classList.remove("stale"); box.classList.add("fresh");
+    label.textContent = "Updated";
+    time.textContent = dispCompact(STATE.lastRefresh);
+  } else {
+    box.classList.remove("fresh"); box.classList.add("stale");
+    label.textContent = "Not refreshed";
+    time.textContent = "Tap ↻ Scores";
+  }
+}
+
+/* ---------- Copy Recent Wagers ---------- */
 const CRW_WINDOW_MS = 3 * 60 * 60 * 1000; // fixed 3-hour lookback, no chain logic
 
 function crwQualifyingEvents(){
   // All wager events (new/edit/delete) belonging to the acting player,
   // timestamped within the last 3 hours. Chronological order (entry order).
+  // NB: String-coerce the owner compare — the log's owner round-trips through
+  // the Sheet/JSON and may not strictly === `acting` (wager owners get coerced
+  // via mergeWagers, log owners don't); strict === silently matched nothing.
   const now = Date.now();
   return STATE.log
-    .filter(e => (e.type==="create"||e.type==="new"||e.type==="edit"||e.type==="delete") && e.owner===acting)
+    .filter(e => (e.type==="create"||e.type==="new"||e.type==="edit"||e.type==="delete")
+              && String(e.owner)===String(acting)
+              && (/^\d+$/.test(String(e.mN)) || e.mN==="bonusWinner" || e.mN==="bonusGoldenBoot"))
     .filter(e => (now - new Date(e.t).getTime()) <= CRW_WINDOW_MS)
     .slice() // copy before reversing — STATE.log is newest-first
     .reverse(); // oldest-first = entry order
@@ -927,6 +1738,919 @@ function updateCopyRecentWagersBtn(){
   // Opened to all users (admin-only testing period ended per explicit go-ahead).
   const show = events.length > 0;
   btn.style.display = show ? "" : "none";
+}
+
+// small HTML escaper for injecting API-sourced strings (player/team names)
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ================================================================
+// Tournament wagers — World Cup Winner / Golden Boot
+// ================================================================
+
+// 7 fixed shortlist cards — ALPHABETICAL, locked, never removed/reordered
+// regardless of pick count (deliberately not strength-ranked, to avoid any
+// "favorites get the top slot" bias — alphabetical has no such signal).
+const BBW_FIXED = ["Argentina","Brazil","England","France","Germany","Netherlands","Spain"];
+
+// Client-side expand/collapse state per team (independent, non-accordion —
+// lets someone compare e.g. Brazil's and Argentina's wagerer lists side by
+// side). Keyed by team name.
+let bbwExpanded = {};
+
+// Order promoted (non-fixed) cards FIRST became active — chronological,
+// never re-sorted by pick count ("easier on the eyes" — a card's position
+// never changes while it's visible). Re-promotion after a card vanished is
+// treated as a FRESH entry (appended at the current end), not restored to
+// any remembered old position — simplest rule, no history to track.
+let bbwPromotionOrder = [];
+
+function bonusWinnerTeamsFor(ownerId){
+  const raw = (STATE.bonusWinnerPicks || {})[ownerId];
+  if(Array.isArray(raw)) return raw.filter(Boolean);
+  return raw ? [raw] : []; // tolerate old one-pick payloads during transition
+}
+
+function bonusWinnerBetCount(){
+  return Object.keys(STATE.bonusWinnerPicks || {})
+    .reduce((sum, oid)=>sum + bonusWinnerTeamsFor(oid).length, 0);
+}
+
+function bonusWinnerLocked(){
+  return Date.now() >= new Date(KNOCKOUT_START_UTC).getTime();
+}
+
+function canEditBonusWinnerBet(ownerId){
+  const locked = bonusWinnerLocked();
+  return ADMINS.includes(memberName(acting)) || (!locked && ownerId===acting);
+}
+
+function bbwYourBetLabel(ownerId){
+  if(ADMINS.includes(memberName(acting)) || ownerId !== acting) return "";
+  return `<span class="bbw-yours">Your wager</span>`;
+}
+
+function bbwConfirmWhoLabel(ownerId){
+  const suffix = ownerId === acting ? " (you)" : "";
+  return `<div class="bbw-confirm-who">${esc(memberName(ownerId))}${suffix}</div>`;
+}
+
+function bbwTeamsWithPicks(){
+  // {team: [ownerId, ownerId, ...]} from the current multi-bet map
+  const byTeam = {};
+  Object.keys(STATE.bonusWinnerPicks || {}).forEach(ownerId=>{
+    bonusWinnerTeamsFor(ownerId).forEach(team=>{
+      (byTeam[team] = byTeam[team] || []).push(ownerId);
+    });
+  });
+  return byTeam;
+}
+
+function renderBonusWinnerCountryView(){
+  const el = $("#bbwCountryView");
+  if(!el) return;
+  const byTeam = bbwTeamsWithPicks();
+
+  // Maintain promotion order: keep only teams that are (a) non-fixed AND
+  // (b) currently have ≥1 picker; append any newly-active team at the end.
+  bbwPromotionOrder = bbwPromotionOrder.filter(t => byTeam[t] && byTeam[t].length>0 && !BBW_FIXED.includes(t));
+  Object.keys(byTeam).forEach(t=>{
+    if(!BBW_FIXED.includes(t) && byTeam[t].length>0 && !bbwPromotionOrder.includes(t))
+      bbwPromotionOrder.push(t);
+  });
+
+  const myTeams = new Set(bonusWinnerTeamsFor(acting));
+  const cardHTML = team => {
+    const owners = (byTeam[team] || [])
+      .slice()
+      .sort((a,b)=>memberName(a).localeCompare(memberName(b)));
+    const n = owners.length;
+    const expanded = !!bbwExpanded[team];
+    const mine = myTeams.has(team);
+    let html = `<div class="bbw-card-unit${expanded?' expanded':''}${mine?' mine':''}">`
+      + `<div class="bbw-card${mine?' mine':''}">`
+      + `<div class="bbw-pick" data-bbwpick="${esc(team)}">`
+      + `<span class="bbw-flag">${teamFlag(team)}</span>`
+      + `<span class="bbw-name">${esc(team)}</span>`
+      + `<span class="bbw-code">(${teamCode(team)})</span>`
+      + `</div>`
+      + `<div class="bbw-wagerzone" data-bbwtoggle="${esc(team)}">`
+      + `<span class="n">${n}</span><span class="lbl">wager${n!==1?'s':''}</span>`
+      + `<span class="chev">${expanded?'▴':'▾'}</span>`
+      + `</div></div>`;
+    if(expanded){
+      html += `<div class="bbw-wagerlist">`
+        + (n===0 ? `<div class="bbw-wager-row bbw-wager-row-empty">No wagers yet</div>`
+           : owners.map(oid=>{
+              const editable = canEditBonusWinnerBet(oid);
+              return `<div class="bbw-wager-row${editable?' bbw-wager-row-editable':''}"`
+                + (editable ? ` data-bbwedit-owner="${oid}" data-bbwedit-team="${esc(team)}"` : ``)
+                + `><span class="who"><span class="nm">${esc(memberName(oid))}</span>${bbwYourBetLabel(oid)}</span>`
+                + (editable
+                  ? `<button class="bbw-remove" data-bbwremove-owner="${oid}" data-bbwremove-team="${esc(team)}" title="Remove wager">✕</button>`
+                  : ``)
+                + `</div>`;
+            }).join(""))
+        + `</div>`;
+    }
+    html += `</div>`;
+    return html;
+  };
+
+  let html = `<div class="bbw-expandall"><button id="bbwExpandAllBtn"></button></div>`;
+  BBW_FIXED.forEach(t => html += cardHTML(t));
+  html += `<hr class="bbw-demarc">`;
+  bbwPromotionOrder.forEach(t => html += cardHTML(t));
+  html += `<div class="bbw-selector" id="bbwSelectorBtn">🌐 Other team... <span class="bbw-selector-chev" aria-hidden="true">▾</span></div>`;
+  el.innerHTML = html;
+
+  // Expand-all/Collapse-all — same smart self-describing label pattern as
+  // Schedule's Collapse-all (re-evaluated after every toggle, individual or
+  // bulk; independent per-card state is fully preserved either way).
+  const allTeams = BBW_FIXED.concat(bbwPromotionOrder);
+  const eabtn = $("#bbwExpandAllBtn");
+  if(eabtn){
+    const anyOpen = allTeams.some(t=>bbwExpanded[t]);
+    eabtn.textContent = anyOpen ? "Collapse all" : "Expand all";
+    eabtn.onclick = ()=>{
+      const nowAnyOpen = allTeams.some(t=>bbwExpanded[t]);
+      allTeams.forEach(t=> bbwExpanded[t] = !nowAnyOpen);
+      renderTournamentSurface();
+    };
+  }
+  document.querySelectorAll("[data-bbwtoggle]").forEach(elx=>{
+    elx.onclick = ()=>{
+      const t = elx.dataset.bbwtoggle;
+      bbwExpanded[t] = !bbwExpanded[t];
+      renderTournamentSurface();
+    };
+  });
+  document.querySelectorAll("[data-bbwpick]").forEach(elx=>{
+    elx.onclick = ()=> bbwStartPick(elx.dataset.bbwpick);
+  });
+  wireBonusWinnerRemoveButtons();
+  wireBonusWinnerEditRows();
+  wireBonusWinnerEditPills();
+  const sel = $("#bbwSelectorBtn");
+  if(sel) sel.onclick = bbwOpenSelector;
+}
+
+function renderBonusWinnerWagererView(){
+  const el = $("#bbwWagererView");
+  if(!el) return;
+  const rows = STATE.members
+    .map(m => ({ member:m, teams: bonusWinnerTeamsFor(m.id) }))
+    .filter(r => r.teams.length)
+    .sort((a,b)=>a.member.name.localeCompare(b.member.name));
+  el.innerHTML = rows.length===0
+    ? `<div class="bb-placeholder">No picks yet</div>`
+    : rows.map(({member:m, teams})=>{
+        const editable = canEditBonusWinnerBet(m.id);
+        const sortedTeams = teams.slice().sort((a,b)=>a.localeCompare(b));
+        const teamPills = sortedTeams.map(team =>
+          `<span class="bbw-team-pill${editable?' bbw-team-pill-editable':''}"`
+          + (editable ? ` data-bbwedit-pill-owner="${m.id}" data-bbwedit-pill-team="${esc(team)}"` : ``)
+          + `>${teamFlag(team)} ${esc(team)} (${teamCode(team)})`
+          + (editable
+            ? `<button class="bbw-remove" data-bbwremove-owner="${m.id}" data-bbwremove-team="${esc(team)}" title="Remove wager">✕</button>`
+            : ``)
+          + `</span>`).join("");
+        return `<div class="bbw-wager-row bbw-wagerer-row gbw-wagerer-row${editable?' bbw-wager-row-editable':''}"`
+          + (editable ? ` data-bbwedit-owner="${m.id}"` : ``)
+          + `><span class="bbw-wagerer-name-col"><span class="who"><span class="nm" title="${esc(m.name)}">${esc(m.name)}</span></span>`
+          + `<span class="bbw-wagerer-count">${teams.length} wager${teams.length!==1?'s':''}</span></span>`
+          + `<span class="bbw-team-list">${teamPills}</span></div>`;
+      }).join("");
+  wireBonusWinnerRemoveButtons();
+  wireBonusWinnerEditRows();
+  wireBonusWinnerEditPills();
+}
+
+// "Other team..." selector sheet — flag+code grid, 3-per-row, alphabetical.
+// SPRINT 2: hardcoded to all 41 non-fixed nations from TEAM_INFO (pruning to
+// the real 25 knockout-stage qualifiers is a dated follow-up for ~June 27,
+// once the bracket is known — tracked separately, not done here).
+function bbwOpenSelector(){
+  const others = Object.keys(TEAM_INFO).filter(t=>!BBW_FIXED.includes(t)).sort();
+  const grid = others.map(t=>
+    `<div class="bbw-tile" data-bbwpick="${esc(t)}"><span class="f">${teamFlag(t)}</span><span class="c">${teamCode(t)}</span></div>`
+  ).join("");
+  openSheet(`<h2>Select a country</h2><div class="bbw-grid">${grid}</div>`);
+  document.querySelectorAll("#sheet [data-bbwpick]").forEach(elx=>{
+    elx.onclick = ()=>{ closeSheet(); bbwStartPick(elx.dataset.bbwpick); };
+  });
+}
+
+// Entry point for picking a team, from ANY source (shortlist card, promoted
+// card, or the grid). Admins get an extra "for whom" step first (proxy entry
+// — they can pick on behalf of any wagerer, same capability as match-wager
+// backfill); everyone else proceeds straight to the universal confirm modal.
+function bbwStartPick(team){
+  if(ADMINS.includes(memberName(acting))){
+    bbwShowForWhom(team);
+  } else {
+    bbwShowConfirm(team, acting);
+  }
+}
+
+function bbwShowForWhom(team){
+  const rest = [...STATE.members].sort((a,b)=>a.name.localeCompare(b.name));
+  const locked = bonusWinnerLocked();
+  const rows = rest.map(m=>
+    `<div class="who${m.id===acting?' self':''}" data-bbwfor="${m.id}">${esc(m.name)}${m.id===acting?' (you)':''}</div>`
+  ).join("");
+  openSheet(`<h2>${locked ? "Backfill" : "Pick"} ${esc(team)} for...</h2>`
+    + (locked ? `<div class="note"><b>Admin-only backfill.</b> Picks are locked for everyone else; this correction will be flagged in Activity.</div>` : ``)
+    + `<div class="bbw-forwhom">${rows}</div>`);
+  document.querySelectorAll("#sheet [data-bbwfor]").forEach(elx=>{
+    elx.onclick = ()=>{ closeSheet(); bbwShowConfirm(team, elx.dataset.bbwfor); };
+  });
+}
+
+function bbwShowConfirm(team, ownerId){
+  const alreadyPicked = bonusWinnerTeamsFor(ownerId).includes(team);
+  const locked = bonusWinnerLocked();
+  const canEdit = canEditBonusWinnerBet(ownerId);
+  const isAdmin = ADMINS.includes(memberName(acting));
+  const adminBackfillNote = locked && isAdmin
+    ? `<div class="note" style="margin-bottom:16px"><b>Admin-only backfill correction.</b> This will be flagged in Activity.</div>`
+    : ``;
+  const btnRow = alreadyPicked && !canEdit
+    ? `<div class="row"><button id="bbwNo" style="flex:1">Keep</button></div>`
+    : `<div class="row">
+        <button id="bbwNo">${alreadyPicked ? "Keep" : "No"}</button>
+        ${alreadyPicked && canEdit
+          ? `<button class="yes" id="bbwYes" style="background:var(--red);border-color:var(--red)">Clear</button>`
+          : `<button class="yes" id="bbwYes">Yes</button>`}
+      </div>`;
+  openSheet(`<div class="bbw-confirm">
+    ${bbwConfirmWhoLabel(ownerId)}
+    <div class="f">${teamFlag(team)}</div>
+    <div class="q">${alreadyPicked ? `You have a wager on ${esc(team)}` : `Confirm ${esc(team)}`}</div>
+    <div class="code">(${teamCode(team)})</div>
+    ${alreadyPicked && canEdit && adminBackfillNote ? adminBackfillNote : ``}
+    ${!alreadyPicked && locked && isAdmin ? `<div class="note" style="margin-bottom:10px"><b>Admin-only backfill.</b> This will be flagged in Activity.</div>` : ``}
+    ${btnRow}
+  </div>`);
+  $("#bbwNo").onclick = closeSheet;
+  const yesBtn = $("#bbwYes");
+  if(yesBtn) yesBtn.onclick = async ()=>{
+    if(alreadyPicked){
+      if(!canEdit) return;
+      yesBtn.disabled = true; yesBtn.textContent = "Clearing…";
+      const r = await serverBonusWinnerDelete(ownerId, team);
+      closeSheet();
+      if(!r || !r.ok){ toast("Couldn't remove: "+(r&&r.error||"unknown error"), 4000); return; }
+      STATE.bonusWinnerPicks = r.picks || {};
+      applyLogResponse(r);
+      toast(r.unchanged ? "No matching wager found" : `Removed wager: ${team}${locked && isAdmin ? " (backfill)" : ""}`);
+      renderTournamentSurface();
+      renderSafe("Tournament banner", updateBonusPulse);
+      return;
+    }
+    yesBtn.disabled = true; yesBtn.textContent = "Saving…";
+    const r = await serverBonusWinnerPick(ownerId, team);
+    closeSheet();
+    if(!r || !r.ok){ toast("Couldn't save: "+(r&&r.error||"unknown error"), 4000); return; }
+    STATE.bonusWinnerPicks = r.picks || {};
+    applyLogResponse(r);
+    toast(r.unchanged ? `Already picked: ${team}` : `Added wager: ${team}`);
+    renderTournamentSurface();
+    renderSafe("Tournament banner", updateBonusPulse);
+  };
+}
+
+async function serverBonusWinnerPick(ownerId, team){
+  return api("bonusWinnerPick", { token: TOKEN || "", ownerId, team });
+}
+
+async function serverBonusWinnerDelete(ownerId, team){
+  return api("bonusWinnerDelete", { token: TOKEN || "", ownerId, team });
+}
+
+function wireBonusWinnerRemoveButtons(){
+  document.querySelectorAll("[data-bbwremove-team]").forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      bbwShowConfirm(btn.dataset.bbwremoveTeam, btn.dataset.bbwremoveOwner);
+    };
+  });
+}
+
+function wireBonusWinnerEditRows(){
+  document.querySelectorAll("[data-bbwedit-owner]").forEach(row=>{
+    row.onclick = (e)=>{
+      if(e.target.closest(".bbw-remove") || e.target.closest("[data-bbwedit-pill-team]")) return;
+      const ownerId = row.dataset.bbweditOwner;
+      const team = row.dataset.bbweditTeam;
+      if(!canEditBonusWinnerBet(ownerId)) return;
+      if(team){
+        bbwShowConfirm(team, ownerId);
+        return;
+      }
+      const teams = bonusWinnerTeamsFor(ownerId);
+      if(teams.length === 1){
+        bbwShowConfirm(teams[0], ownerId);
+      } else {
+        bbwShowWagererBetsEdit(ownerId);
+      }
+    };
+  });
+}
+
+function wireBonusWinnerEditPills(){
+  document.querySelectorAll("[data-bbwedit-pill-team]").forEach(pill=>{
+    pill.onclick = (e)=>{
+      e.stopPropagation();
+      const ownerId = pill.dataset.bbweditPillOwner;
+      const team = pill.dataset.bbweditPillTeam;
+      if(!canEditBonusWinnerBet(ownerId)) return;
+      bbwShowConfirm(team, ownerId);
+    };
+  });
+}
+
+function bbwShowWagererBetsEdit(ownerId){
+  const teams = bonusWinnerTeamsFor(ownerId).slice().sort((a,b)=>a.localeCompare(b));
+  const rows = teams.map(team =>
+    `<div class="who" data-bbw-pick-team="${esc(team)}">${teamFlag(team)} ${esc(team)} (${teamCode(team)})</div>`
+  ).join("");
+  openSheet(`<h2>${esc(memberName(ownerId))}</h2>`
+    + `<div class="note">Tap a wager to keep or clear.</div>`
+    + `<div class="bbw-forwhom">${rows}</div>`);
+  document.querySelectorAll("#sheet [data-bbw-pick-team]").forEach(el=>{
+    el.onclick = ()=>{ closeSheet(); bbwShowConfirm(el.dataset.bbwPickTeam, ownerId); };
+  });
+}
+
+// Golden Boot — WCW-style multi-player wagers. Pinned list is fixed and neutral
+// (last-name order); source rows from Top Scorers are only used for goals/current
+// candidate discovery, never as the persisted identity by themselves.
+const GBW_FIXED = [
+  {key:"cody-gakpo", shortName:"C. Gakpo", fullName:"Cody Gakpo", team:"Netherlands", aliases:["C. Gakpo","Cody Gakpo","Gakpo"]},
+  {key:"erling-haaland", shortName:"E. Haaland", fullName:"Erling Haaland", team:"Norway", aliases:["E. Haaland","Erling Haaland","Haaland"]},
+  {key:"harry-kane", shortName:"H. Kane", fullName:"Harry Kane", team:"England", aliases:["H. Kane","Harry Kane","Kane"]},
+  {key:"kylian-mbappe", shortName:"K. Mbappé", fullName:"Kylian Mbappé", team:"France", aliases:["K. Mbappé","Kylian Mbappé","Kylian Mbappe","Mbappe","Mbappé"]},
+  {key:"lionel-messi", shortName:"L. Messi", fullName:"Lionel Messi", team:"Argentina", aliases:["L. Messi","Lionel Messi","Messi"]},
+  {key:"cristiano-ronaldo", shortName:"C. Ronaldo", fullName:"Cristiano Ronaldo", team:"Portugal", aliases:["C. Ronaldo","Cristiano Ronaldo","Ronaldo"]},
+  {key:"deniz-undav", shortName:"D. Undav", fullName:"Deniz Undav", team:"Germany", aliases:["D. Undav","Deniz Undav","Undav"]},
+  {key:"vinicius-junior", shortName:"Vinicius Jr.", fullName:"Vinícius Júnior", team:"Brazil", aliases:["Vinicius Jr.","Vinícius Júnior","Vinicius Junior","Vinícius Jr.","V. Junior","V. Júnior"]},
+  {key:"lamine-yamal", shortName:"L. Yamal", fullName:"Lamine Yamal", team:"Spain", aliases:["L. Yamal","Lamine Yamal","Yamal"]}
+];
+
+let gbwExpanded = {};
+let gbwPromotionOrder = [];
+
+function normPlayerName(s){
+  return String(s || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\bjr\b/g, "junior")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function gbwLastNameSortKey(name){
+  const parts = normPlayerName(name).split(/\s+/).filter(Boolean);
+  if(!parts.length) return "";
+  const last = parts[parts.length - 1];
+  if((last === "junior" || last === "sr" || last === "senior") && parts.length > 1)
+    return parts[parts.length - 2];
+  return last;
+}
+
+// Display order for Golden Boot lists — names only. fifaPersonId / playerKey are
+// identity references and must never influence sort order.
+function gbwCompareByLastName(a, b){
+  const ka = gbwLastNameSortKey(a.fullName || a.name || a.shortName || "");
+  const kb = gbwLastNameSortKey(b.fullName || b.name || b.shortName || "");
+  const cmp = ka.localeCompare(kb);
+  if(cmp) return cmp;
+  return normPlayerName(a.fullName || a.name || "").localeCompare(normPlayerName(b.fullName || b.name || ""));
+}
+
+function gbwSourceKey(row){
+  return String(row.team || "unknown").toLowerCase().replace(/[^a-z0-9]+/g,"-")
+    + ":" + normPlayerName(row.name).replace(/\s+/g,"-");
+}
+
+function gbwShortNameFromSource(name){
+  const raw = String(name || "").trim();
+  if(!raw) return "?";
+  const parts = raw.split(/\s+/);
+  if(parts.length < 2) return raw;
+  return parts[0].includes(".") ? raw : `${parts[0].charAt(0)}. ${parts.slice(1).join(" ")}`;
+}
+
+function gbwFindSourceRow(player){
+  const team = player.team;
+  const key = player.key;
+  const board = currentTopScorersBoard();
+  if (key && key.indexOf("fifa-person:") === 0) {
+    const hit = board.find(r =>
+      r.playerKey === key
+      || (r.fifaPersonId && ("fifa-person:" + r.fifaPersonId) === key)
+    );
+    if (hit) return hit;
+  }
+  const aliases = [player.shortName, player.fullName].concat(player.aliases || []).map(normPlayerName);
+  return board.find(r =>
+    r.team === team && aliases.includes(normPlayerName(r.name))
+  ) || null;
+}
+
+function gbwMatchesFixedPlayer(player){
+  return GBW_FIXED.some(f => {
+    if(f.key === player.key) return true;
+    if(f.team !== player.team) return false;
+    const aliases = [f.shortName, f.fullName].concat(f.aliases || []).map(normPlayerName);
+    return aliases.includes(normPlayerName(player.fullName || player.name || player.shortName));
+  });
+}
+
+function gbwHydratePlayer(player){
+  const src = gbwFindSourceRow(player);
+  const fullName = player.fullName || player.name || player.shortName || "";
+  const shortName = player.shortName || gbwShortNameFromSource(fullName);
+  return Object.assign({}, player, {
+    fullName,
+    shortName,
+    name: fullName,
+    code: teamCode(player.team),
+    goals: src && src.goals != null ? +src.goals : (player.goals || 0),
+    rank: src ? src.rank : (player.rank != null ? player.rank : null)
+  });
+}
+
+function gbwPlayerFromSource(row){
+  const shortName = gbwShortNameFromSource(row.name);
+  const key = row.playerKey
+    || (row.fifaPersonId ? "fifa-person:" + row.fifaPersonId : gbwSourceKey(row));
+  return {
+    key: key,
+    shortName,
+    fullName: row.name || shortName,
+    name: row.name || shortName,
+    team: row.team,
+    code: teamCode(row.team),
+    aliases: [row.name, shortName],
+    goals: row.goals || 0,
+    rank: row.rank,
+    fifaPersonId: row.fifaPersonId || null
+  };
+}
+
+function gbwAllPlayerMap(){
+  const map = {};
+  GBW_FIXED.forEach(p => { map[p.key] = gbwHydratePlayer(p); });
+  filterTopScorersForDisplay(currentTopScorersBoard()).forEach(r=>{
+    const p = gbwPlayerFromSource(r);
+    if(!gbwMatchesFixedPlayer(p))
+      map[p.key] = p;
+  });
+  Object.keys(STATE.bonusGoldenBootPicks || {}).forEach(ownerId=>{
+    bonusGoldenBootPlayersFor(ownerId).forEach(p=>{
+      if(!map[p.key]) map[p.key] = gbwHydratePlayer(p);
+    });
+  });
+  return map;
+}
+
+function bonusGoldenBootPlayersFor(ownerId){
+  const raw = (STATE.bonusGoldenBootPicks || {})[ownerId];
+  if(!Array.isArray(raw)) return [];
+  return raw.map(p => typeof p === "string" ? {key:p, shortName:p, fullName:p, name:p, team:""} : p)
+    .filter(p => p && p.key);
+}
+
+function bonusGoldenBootBetCount(){
+  return Object.keys(STATE.bonusGoldenBootPicks || {})
+    .reduce((sum, oid)=>sum + bonusGoldenBootPlayersFor(oid).length, 0);
+}
+
+function bonusGoldenBootLocked(){
+  return Date.now() >= new Date(KNOCKOUT_START_UTC).getTime();
+}
+
+function canEditBonusGoldenBootBet(ownerId){
+  const locked = bonusGoldenBootLocked();
+  return ADMINS.includes(memberName(acting)) || (!locked && ownerId===acting);
+}
+
+function gbwPlayerLabel(p, opts={}){
+  const goals = p.goals != null ? +p.goals : 0;
+  const code = p.code || teamCode(p.team);
+  const name = opts.full ? (p.fullName || p.name || p.shortName) : (p.shortName || p.name || p.fullName);
+  return `${teamFlag(p.team)} ${esc(name)} (${code}${opts.pill ? `, ${goals} GLS` : ""})`;
+}
+
+function gbwPlayersWithPicks(){
+  const byPlayer = {};
+  Object.keys(STATE.bonusGoldenBootPicks || {}).forEach(ownerId=>{
+    bonusGoldenBootPlayersFor(ownerId).forEach(p=>{
+      (byPlayer[p.key] = byPlayer[p.key] || []).push(ownerId);
+    });
+  });
+  return byPlayer;
+}
+
+function gbwLivePlayerStatus(player){
+  const src = gbwFindSourceRow(player);
+  const hydrated = gbwHydratePlayer(player);
+  const rawRank = src && src.rank != null && src.rank !== "" ? +src.rank : null;
+  const rank = Number.isFinite(rawRank) ? rawRank : null;
+  const rawGoals = src && src.goals != null && src.goals !== "" ? +src.goals : (hydrated.goals || 0);
+  const goals = Number.isFinite(rawGoals) ? rawGoals : 0;
+  const team = src && src.team ? src.team : hydrated.team;
+  return Object.assign({}, hydrated, {
+    team,
+    code: teamCode(team),
+    rank,
+    rankValue: rank != null ? rank : Number.POSITIVE_INFINITY,
+    goals
+  });
+}
+
+function gbwLiveRankText(p){
+  return p.rank != null ? `#${p.rank} · ${p.goals || 0} GLS` : `not currently ranked · ${p.goals || 0} GLS`;
+}
+
+function gbwLiveLeaderboardRows(){
+  const players = gbwAllPlayerMap();
+  return STATE.members
+    .map(m=>{
+      const picks = bonusGoldenBootPlayersFor(m.id)
+        .map(p => gbwLivePlayerStatus(players[p.key] || p))
+        .sort((a,b)=>
+          a.rankValue-b.rankValue
+          || (b.goals || 0)-(a.goals || 0)
+          || (a.shortName || a.name || "").localeCompare(b.shortName || b.name || "")
+        );
+      return { member:m, picks, best:picks[0] || null };
+    })
+    .filter(r => r.picks.length)
+    .sort((a,b)=>
+      a.best.rankValue-b.best.rankValue
+      || a.picks.length-b.picks.length
+      || a.member.name.localeCompare(b.member.name)
+    );
+}
+
+function renderGoldenBootLeaderboardCard(){
+  const btn = $("#gbwLiveLeaderboardBtn");
+  if(!btn) return;
+  btn.onclick = showGoldenBootLeaderboard;
+}
+
+function showGoldenBootLeaderboard(){
+  const rows = gbwLiveLeaderboardRows();
+  const body = rows.length ? rows.map((r,i)=>{
+    const best = r.best;
+    const live = best.rank === 1;
+    return `<button type="button" class="gbw-lb-card${live?' live':''}" data-gbw-lb-owner="${r.member.id}">`
+      + `<div class="gbw-lb-row"><span class="gbw-lb-name">${i+1}. ${esc(r.member.name)}</span></div>`
+      + `<div class="gbw-lb-pick">${gbwPlayerLabel(best)} · ${gbwLiveRankText(best)}</div>`
+      + `<div class="gbw-lb-sub">${r.picks.length} active wager${r.picks.length!==1?'s':''}</div>`
+      + `</button>`;
+  }).join("") : `<div class="gbw-lb-empty">No Golden Boot wagers yet.</div>`;
+  openSheet(`<h2>Live Golden Boot Leaderboard</h2>`
+    + `<div class="sub">Read-only</div>`
+    + body);
+  document.querySelectorAll("#sheet [data-gbw-lb-owner]").forEach(el=>{
+    el.onclick = ()=>showGoldenBootLeaderboardDetail(el.dataset.gbwLbOwner);
+  });
+}
+
+function showGoldenBootLeaderboardDetail(ownerId){
+  const row = gbwLiveLeaderboardRows().find(r => r.member.id === ownerId);
+  if(!row) return showGoldenBootLeaderboard();
+  const wagers = row.picks.map(p=>
+    `<div class="gbw-lb-wager"><span><span class="p">${gbwPlayerLabel(p)}</span>`
+    + `<span class="m">${gbwLiveRankText(p)}</span></span></div>`
+  ).join("");
+  openSheet(`<h2>${esc(row.member.name)}</h2>`
+    + `<div class="sub">Read-only wagers</div>`
+    + `<div>${wagers}</div>`
+    + `<div class="row" style="margin-top:12px"><button id="gbwLbBack" style="flex:1">Back to leaderboard</button></div>`);
+  const back = $("#gbwLbBack");
+  if(back) back.onclick = showGoldenBootLeaderboard;
+}
+
+function renderGoldenBootPlayerView(){
+  const el = $("#gbwPlayerView");
+  if(!el) return;
+  const byPlayer = gbwPlayersWithPicks();
+  const players = gbwAllPlayerMap();
+  const fixedKeys = GBW_FIXED.map(p=>p.key);
+  gbwPromotionOrder = gbwPromotionOrder.filter(k => byPlayer[k] && byPlayer[k].length>0 && !fixedKeys.includes(k));
+  Object.keys(byPlayer).forEach(k=>{
+    if(byPlayer[k].length>0 && !fixedKeys.includes(k) && !gbwPromotionOrder.includes(k))
+      gbwPromotionOrder.push(k);
+  });
+  const myKeys = new Set(bonusGoldenBootPlayersFor(acting).map(p=>p.key));
+  const cardHTML = p => {
+    p = gbwHydratePlayer(p);
+    const owners = (byPlayer[p.key] || []).slice().sort((a,b)=>memberName(a).localeCompare(memberName(b)));
+    const n = owners.length;
+    const expanded = !!gbwExpanded[p.key];
+    const mine = myKeys.has(p.key);
+    let html = `<div class="bbw-card-unit gbw-card-unit${expanded?' expanded':''}${mine?' mine':''}">`
+      + `<div class="bbw-card gbw-card${mine?' mine':''}">`
+      + `<div class="bbw-pick" data-gbwpick="${esc(p.key)}" title="${esc(p.fullName || p.name || p.shortName)}">`
+      + `<span class="bbw-flag">${teamFlag(p.team)}</span>`
+      + `<span class="gbw-name-wrap"><span class="bbw-name">${esc(p.shortName || p.name)}</span><span class="bbw-code">(${teamCode(p.team)})</span></span>`
+      + `<span class="bbw-stage">${p.goals || 0} GLS</span>`
+      + `</div>`
+      + `<div class="bbw-wagerzone" data-gbwtoggle="${esc(p.key)}">`
+      + `<span class="n">${n}</span><span class="lbl">wager${n!==1?'s':''}</span>`
+      + `<span class="chev">${expanded?'▴':'▾'}</span>`
+      + `</div></div>`;
+    if(expanded){
+      html += `<div class="bbw-wagerlist">`
+        + (n===0 ? `<div class="bbw-wager-row bbw-wager-row-empty">No wagers yet</div>`
+           : owners.map(oid=>{
+              const editable = canEditBonusGoldenBootBet(oid);
+              return `<div class="bbw-wager-row${editable?' bbw-wager-row-editable':''}"`
+                + (editable ? ` data-gbwedit-owner="${oid}" data-gbwedit-key="${esc(p.key)}"` : ``)
+                + `><span class="who"><span class="nm">${esc(memberName(oid))}</span>${bbwYourBetLabel(oid)}</span>`
+                + (editable
+                  ? `<button class="bbw-remove" data-gbwremove-owner="${oid}" data-gbwremove-key="${esc(p.key)}" title="Remove wager">✕</button>`
+                  : ``)
+                + `</div>`;
+            }).join(""))
+        + `</div>`;
+    }
+    html += `</div>`;
+    return html;
+  };
+  let html = `<div class="gbw-toolbar">`
+    + `<div class="gbw-toolbar-side" aria-hidden="true"></div>`
+    + `<button type="button" class="gbw-topscorers-btn" id="gbwTopScorersBtn">Top Scorers</button>`
+    + `<div class="gbw-toolbar-side gbw-toolbar-side-end">`
+    + `<div class="bbw-expandall"><button type="button" id="gbwExpandAllBtn"></button></div>`
+    + `</div></div>`;
+  GBW_FIXED.forEach(p => html += cardHTML(p));
+  html += `<hr class="bbw-demarc">`;
+  gbwPromotionOrder.forEach(k => { if(players[k]) html += cardHTML(players[k]); });
+  html += `<div class="bbw-selector gbw-selector" id="gbwSelectorBtn">Other names... <span class="bbw-selector-chev" aria-hidden="true">▾</span></div>`;
+  el.innerHTML = html;
+  const allKeys = fixedKeys.concat(gbwPromotionOrder);
+  const eabtn = $("#gbwExpandAllBtn");
+  if(eabtn){
+    const anyOpen = allKeys.some(k=>gbwExpanded[k]);
+    eabtn.textContent = anyOpen ? "Collapse all" : "Expand all";
+    eabtn.onclick = ()=>{
+      const nowAnyOpen = allKeys.some(k=>gbwExpanded[k]);
+      allKeys.forEach(k=> gbwExpanded[k] = !nowAnyOpen);
+      renderTournamentSurface();
+    };
+  }
+  document.querySelectorAll("[data-gbwtoggle]").forEach(x=>x.onclick=()=>{
+    gbwExpanded[x.dataset.gbwtoggle] = !gbwExpanded[x.dataset.gbwtoggle];
+    renderTournamentSurface();
+  });
+  document.querySelectorAll("[data-gbwpick]").forEach(x=>x.onclick=()=>gbwStartPick(x.dataset.gbwpick));
+  document.querySelectorAll("[data-gbwremove-key]").forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    gbwShowConfirm(btn.dataset.gbwremoveKey, btn.dataset.gbwremoveOwner);
+  });
+  document.querySelectorAll("[data-gbwedit-key]").forEach(row=>row.onclick=e=>{
+    if(e.target.closest(".bbw-remove")) return;
+    gbwShowConfirm(row.dataset.gbweditKey, row.dataset.gbweditOwner);
+  });
+  const sel = $("#gbwSelectorBtn"); if(sel) sel.onclick = gbwOpenSelector;
+  const ts = $("#gbwTopScorersBtn"); if(ts) ts.onclick = showTopScorers;
+}
+
+function renderGoldenBootWagererView(){
+  const el = $("#gbwWagererView");
+  if(!el) return;
+  const players = gbwAllPlayerMap();
+  const rows = STATE.members
+    .map(m => ({ member:m, players: bonusGoldenBootPlayersFor(m.id).map(p=>players[p.key] || p) }))
+    .filter(r => r.players.length)
+    .sort((a,b)=>a.member.name.localeCompare(b.member.name));
+  el.innerHTML = rows.length===0
+    ? `<div class="bb-placeholder">No picks yet</div>`
+    : rows.map(({member:m, players:ps})=>{
+        const editable = canEditBonusGoldenBootBet(m.id);
+        const sorted = ps.slice().sort((a,b)=>(a.shortName||a.name).localeCompare(b.shortName||b.name));
+        const pills = sorted.map(p =>
+          `<span class="bbw-team-pill${editable?' bbw-team-pill-editable':''}" title="${esc(p.fullName || p.name || p.shortName)}"`
+          + (editable ? ` data-gbwedit-pill-owner="${m.id}" data-gbwedit-pill-key="${esc(p.key)}"` : ``)
+          + `>${gbwPlayerLabel(p,{pill:true})}`
+          + (editable
+            ? `<button class="bbw-remove" data-gbwremove-owner="${m.id}" data-gbwremove-key="${esc(p.key)}" title="Remove wager">✕</button>`
+            : ``)
+          + `</span>`).join("");
+        return `<div class="bbw-wager-row bbw-wagerer-row${editable?' bbw-wager-row-editable':''}"`
+          + (editable ? ` data-gbwedit-owner="${m.id}"` : ``)
+          + `><span class="bbw-wagerer-name-col"><span class="who"><span class="nm" title="${esc(m.name)}">${esc(m.name)}</span></span>`
+          + `<span class="bbw-wagerer-count">${ps.length} wager${ps.length!==1?'s':''}</span></span>`
+          + `<span class="bbw-team-list">${pills}</span></div>`;
+      }).join("");
+  document.querySelectorAll("[data-gbwremove-key]").forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation(); gbwShowConfirm(btn.dataset.gbwremoveKey, btn.dataset.gbwremoveOwner);
+  });
+  document.querySelectorAll("[data-gbwedit-pill-key]").forEach(pill=>pill.onclick=e=>{
+    e.stopPropagation(); gbwShowConfirm(pill.dataset.gbweditPillKey, pill.dataset.gbweditPillOwner);
+  });
+  document.querySelectorAll("[data-gbwedit-owner]").forEach(row=>row.onclick=e=>{
+    if(e.target.closest(".bbw-remove") || e.target.closest("[data-gbwedit-pill-key]")) return;
+    const ps = bonusGoldenBootPlayersFor(row.dataset.gbweditOwner);
+    if(ps.length === 1) gbwShowConfirm(ps[0].key, row.dataset.gbweditOwner);
+    else gbwShowWagererBetsEdit(row.dataset.gbweditOwner);
+  });
+}
+
+function gbwShowWagererBetsEdit(ownerId){
+  const players = gbwAllPlayerMap();
+  const rows = bonusGoldenBootPlayersFor(ownerId)
+    .map(p => players[p.key] || gbwHydratePlayer(p))
+    .sort((a,b)=>(a.shortName||a.name).localeCompare(b.shortName||b.name))
+    .map(p =>
+      `<div class="who" data-gbw-pick-key="${esc(p.key)}">${gbwPlayerLabel(p,{pill:true})}</div>`
+    ).join("");
+  openSheet(`<h2>${esc(memberName(ownerId))}</h2>`
+    + `<div class="note">Tap a wager to keep or clear.</div>`
+    + `<div class="bbw-forwhom">${rows}</div>`);
+  document.querySelectorAll("#sheet [data-gbw-pick-key]").forEach(el=>{
+    el.onclick = ()=>{ closeSheet(); gbwShowConfirm(el.dataset.gbwPickKey, ownerId); };
+  });
+}
+
+function gbwOpenSelector(){
+  const fixed = new Set(GBW_FIXED.map(p=>p.key));
+  const rows = goldenBootOtherNameCandidates(currentTopScorersBoard())
+    .slice()
+    .sort((a, b) => gbwCompareByLastName({ name: a.name }, { name: b.name }))
+    .map(gbwPlayerFromSource)
+    .filter(p => !fixed.has(p.key) && !gbwMatchesFixedPlayer(p));
+  const grid = rows.length
+    ? rows.map(p=>`<div class="gbw-tile" data-gbwpick="${esc(p.key)}" title="${esc(p.fullName || p.name)}">`
+        + `<span class="nm">${gbwPlayerLabel(p)}</span><span class="meta">${p.goals || 0} GLS</span></div>`).join("")
+    : `<div class="sub">No other players with ${TOP_SCORERS_MIN_GLS}+ goals available yet. Try Top Scorers after the next refresh.</div>`;
+  openSheet(`<h2>Other names<span class="gbw-other-names-min">${goldenBootMinGlsTitleSuffix()}</span></h2><div class="sub gbw-other-names-sub">Current Top Scorers candidates, excluding pinned players.</div><div class="gbw-grid">${grid}</div>`);
+  document.querySelectorAll("#sheet [data-gbwpick]").forEach(el=>{
+    el.onclick = ()=>{ closeSheet(); gbwStartPick(el.dataset.gbwpick); };
+  });
+}
+
+function gbwPlayerByKey(key){
+  return gbwAllPlayerMap()[key] || null;
+}
+
+function gbwStartPick(key){
+  if(ADMINS.includes(memberName(acting))) gbwShowForWhom(key);
+  else gbwShowConfirm(key, acting);
+}
+
+function gbwShowForWhom(key){
+  const p = gbwPlayerByKey(key); if(!p) return toast("Player not available", 3000);
+  const locked = bonusGoldenBootLocked();
+  const rows = [...STATE.members].sort((a,b)=>a.name.localeCompare(b.name)).map(m=>
+    `<div class="who${m.id===acting?' self':''}" data-gbwfor="${m.id}">${esc(m.name)}${m.id===acting?' (you)':''}</div>`
+  ).join("");
+  openSheet(`<h2>${locked ? "Backfill" : "Pick"} ${esc(p.shortName || p.name)} for...</h2>`
+    + (locked ? `<div class="note"><b>Admin-only backfill.</b> Picks are locked for everyone else; this correction will be flagged in Activity.</div>` : ``)
+    + `<div class="bbw-forwhom">${rows}</div>`);
+  document.querySelectorAll("#sheet [data-gbwfor]").forEach(el=>{
+    el.onclick = ()=>{ closeSheet(); gbwShowConfirm(key, el.dataset.gbwfor); };
+  });
+}
+
+function gbwShowConfirm(key, ownerId){
+  const p = gbwPlayerByKey(key); if(!p) return toast("Player not available", 3000);
+  const alreadyPicked = bonusGoldenBootPlayersFor(ownerId).some(x=>x.key===key);
+  const locked = bonusGoldenBootLocked();
+  const canEdit = canEditBonusGoldenBootBet(ownerId);
+  const isAdmin = ADMINS.includes(memberName(acting));
+  const btnRow = alreadyPicked && !canEdit
+    ? `<div class="row"><button id="gbwNo" style="flex:1">Keep</button></div>`
+    : `<div class="row">
+        <button id="gbwNo">${alreadyPicked ? "Keep" : "No"}</button>
+        ${alreadyPicked && canEdit
+          ? `<button class="yes" id="gbwYes" style="background:var(--red);border-color:var(--red)">Clear</button>`
+          : `<button class="yes" id="gbwYes">Yes</button>`}
+      </div>`;
+  openSheet(`<div class="bbw-confirm">
+    ${bbwConfirmWhoLabel(ownerId)}
+    <div class="f">${teamFlag(p.team)}</div>
+    <div class="gbw-confirm-name">${alreadyPicked ? `You have a wager on ${esc(p.fullName || p.name)}` : `Confirm ${esc(p.fullName || p.name)}`}</div>
+    <div class="gbw-confirm-meta">(${teamCode(p.team)}) · ${p.goals || 0} GLS</div>
+    ${locked && isAdmin && (!alreadyPicked || canEdit)
+      ? `<div class="note" style="margin-bottom:10px"><b>Admin-only backfill${alreadyPicked ? " correction" : ""}.</b> Picks are locked for everyone else; this will be flagged in Activity.</div>`
+      : ``}
+    ${btnRow}
+  </div>`);
+  $("#gbwNo").onclick = closeSheet;
+  const yesBtn = $("#gbwYes");
+  if(yesBtn) yesBtn.onclick = async ()=>{
+    if(alreadyPicked){
+      if(!canEdit) return;
+      yesBtn.disabled = true; yesBtn.textContent = "Clearing…";
+      const r = await serverBonusGoldenBootDelete(ownerId, key);
+      closeSheet();
+      if(!r || !r.ok){ toast("Couldn't remove: "+(r&&r.error||"unknown error"), 4000); return; }
+      STATE.bonusGoldenBootPicks = r.picks || {};
+      applyLogResponse(r);
+      toast(r.unchanged ? "No matching wager found" : `Removed wager: ${p.shortName || p.name}${locked && isAdmin ? " (backfill)" : ""}`);
+      renderTournamentSurface(); renderSafe("Tournament banner", updateBonusPulse);
+      return;
+    }
+    yesBtn.disabled = true; yesBtn.textContent = "Saving…";
+    const r = await serverBonusGoldenBootPick(ownerId, p);
+    closeSheet();
+    if(!r || !r.ok){ toast("Couldn't save: "+(r&&r.error||"unknown error"), 4000); return; }
+    STATE.bonusGoldenBootPicks = r.picks || {};
+    applyLogResponse(r);
+    toast(r.unchanged ? `Already picked: ${p.shortName || p.name}` : `Added wager: ${p.shortName || p.name}`);
+    renderTournamentSurface(); renderSafe("Tournament banner", updateBonusPulse);
+  };
+}
+
+async function serverBonusGoldenBootPick(ownerId, player){
+  return api("bonusGoldenBootPick", { token: TOKEN || "", ownerId, player });
+}
+
+async function serverBonusGoldenBootDelete(ownerId, playerKey){
+  return api("bonusGoldenBootDelete", { token: TOKEN || "", ownerId, playerKey });
+}
+
+document.querySelectorAll("[data-bbwview]").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll("[data-bbwview]").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  const isCountry = t.dataset.bbwview === "country";
+  $("#bbwCountryView").style.display = isCountry ? "" : "none";
+  $("#bbwWagererView").style.display = isCountry ? "none" : "";
+});
+
+document.querySelectorAll("[data-gbwview]").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll("[data-gbwview]").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  const isPlayer = t.dataset.gbwview === "player";
+  $("#gbwPlayerView").style.display = isPlayer ? "" : "none";
+  $("#gbwWagererView").style.display = isPlayer ? "none" : "";
+});
+
+// First Round of 32 kickoff (Match 73, Group A runners-up vs Group B
+// runners-up, Sunday June 28 2026, 8:00 PM Pacific — verified via web search,
+// confirmed against multiple sources incl. Sky Sports' fixture list). Stored
+// as a precise UTC instant (NOT a date string in some local timezone) to
+// avoid this project's documented timezone-fragility pitfalls — Date.now()
+// is also always UTC-based internally, so the comparison is unambiguous
+// regardless of the device's own timezone.
+const KNOCKOUT_START_UTC = "2026-06-29T03:00:00Z"; // = Jun 28, 8:00 PM Pacific
+// Tournament tab discovery nudge — thin teal frame when not selected, through
+// Jun 30 Pacific inclusive (= Jul 1 00:00 PDT = Jul 1 07:00 UTC). Teal avoids
+// clashing with .tab.active blue (selected tab underline + text).
+const TOURNAMENT_TAB_HIGHLIGHT_UNTIL = "2026-07-01T07:00:00Z";
+
+function updateTournamentTabHighlight(){
+  const tab = $("#bonusTab");
+  if(!tab) return;
+  tab.classList.toggle("tab-highlight",
+    Date.now() < new Date(TOURNAMENT_TAB_HIGHLIGHT_UNTIL).getTime());
+}
+
+// Lock-reminder banner: gentle pulse while the acting player hasn't completed
+// BOTH bets (a World Cup Winner pick AND all 3 Golden Boot slots), stops the
+// instant they have. Once the knockout stage has actually begun, the WHOLE
+// banner is removed (not replaced with a static "locked" message) — it has
+// nothing useful left to say once the deadline has passed, and removing it
+// reclaims that vertical space for the now more-useful live content (cards,
+// stage-reached status) that becomes the real focus of Phase B onward.
+// Winner completion is now backed by real BonusWinner bets; Golden Boot remains
+// a Sprint 3 stub until its own storage exists. The kickoff-based removal is
+// real today, since it depends only on the clock, not on picking data.
+function updateBonusPulse(){
+  const banner = $("#bbBanner");
+  if(!banner) return;
+  if(Date.now() >= new Date(KNOCKOUT_START_UTC).getTime()){
+    banner.style.display = "none";
+    return;
+  }
+  banner.style.display = "";
+  const hasPickedWinner = bonusWinnerTeamsFor(acting).length > 0;
+  const hasPickedGoldenBoot = bonusGoldenBootPlayersFor(acting).length > 0;
+  const bothDone = hasPickedWinner && hasPickedGoldenBoot;
+  banner.classList.toggle("bb-pulse", !bothDone);
+}
+
+// Reuses the same .pot-card component/format as Participants' pot, per the
+// locked design — same look, ₹500/entry math. World Cup Winner has real active
+// bet data: pot = active country bets × ₹500, so one wagerer backing three
+// different teams contributes three entries to the pot. Golden Boot mirrors
+// this: each active owner+player row contributes one ₹500 wager.
+function renderBonusPot(){
+  const winnerEntries = bonusWinnerBetCount();
+  const goldenBootEntries = bonusGoldenBootBetCount();
+  const wEl = $("#winnerPotCard");
+  if(wEl) wEl.innerHTML = `<div class="pot-amt">Total Pot = INR ${(winnerEntries*500).toLocaleString('en-IN')}</div>`
+    + `<div class="pot-sub">${winnerEntries} wager${winnerEntries!==1?'s':''} · ₹500 each</div>`;
+  const gEl = $("#gbPotCard");
+  if(gEl) gEl.innerHTML = `<div class="pot-amt">Total Pot = INR ${(goldenBootEntries*500).toLocaleString('en-IN')}</div>`
+    + `<div class="pot-sub">${goldenBootEntries} wager${goldenBootEntries!==1?'s':''} · ₹500 each</div>`;
 }
 
 function crwFmtDateTime(ts){
@@ -944,42 +2668,93 @@ function crwFmtDateTime(ts){
 }
 
 function copyRecentWagers(){
-  // No dedup — every qualifying raw event prints as its own line, preserving
-  // full provenance (e.g. a match edited 3 times shows all 3 entries). Only
-  // the TRUE LATEST record for a given match gets the "(CURRENT)" suffix,
-  // checked inline via findLast (fine at this feature's real scale — a
-  // handful of events per 3-hour sprint, not worth a separate Map setup).
+  // DISPLAY ONLY — collapses to the most recent event per wager target (current
+  // position, not edit history); the underlying Sheet Log keeps every raw event
+  // permanently regardless (Activity tab "Show all" / fullLog), so full
+  // provenance is never lost, just not surfaced in this WhatsApp-facing copy.
+  // A target whose LATEST event is a clear is OMITTED entirely — "cleared" as
+  // a standalone line is a non-sequitur to someone in the group with no context,
+  // and the point of this feature is "what are my live wagers right now," not a
+  // history feed. No "(CURRENT)" suffix — collapsed to one line per matchup
+  // plus grouped Tournament rows, there's nothing left to disambiguate.
   const rawEvents = crwQualifyingEvents();
   if(!rawEvents.length) return; // shouldn't happen if button correctly hidden
   const tzLabel = TZS[TZSTATE].label;
 
-  // header range: TimeA = earliest qualifying event, TimeB = now.
-  // Always two dates, even same-day (deliberate KISS choice — no special-casing).
+  // header range still spans the FULL raw window (earliest raw event → now),
+  // even though some of that activity may collapse away below — the range
+  // describes "how far back this summary looks," not "what's shown."
   const first  = crwFmtDateTime(rawEvents[0].t);
   const nowFmt = crwFmtDateTime(Date.now());
+
+  // Collapse to the latest event per match/team/player, then drop any whose
+  // latest event is a delete — those have no current position to report. Match
+  // rows keep their existing format; Tournament wagers are grouped by product
+  // after current-state is established per individual wager.
+  const latestByMatch = new Map();
+  const latestWinner = new Map();
+  const latestGoldenBoot = new Map();
+  rawEvents.forEach(e => {
+    if(/^\d+$/.test(String(e.mN))) latestByMatch.set(e.mN, e);
+    else if(e.mN==="bonusWinner") latestWinner.set(String(e.name || ""), e);
+    else if(e.mN==="bonusGoldenBoot") latestGoldenBoot.set(String(e.a || e.name || ""), e);
+  }); // later events overwrite — rawEvents is oldest-first
+  const currentMatches = [...latestByMatch.values()]
+    .filter(e => e.type !== "delete")
+    .sort((a,b) => new Date(a.t) - new Date(b.t));
+  const currentWinner = [...latestWinner.values()]
+    .filter(e => e.type !== "delete")
+    .sort((a,b) => new Date(a.t) - new Date(b.t));
+  const currentGoldenBoot = [...latestGoldenBoot.values()]
+    .filter(e => e.type !== "delete")
+    .sort((a,b) => new Date(a.t) - new Date(b.t));
+
+  // Everything in the window ended up cleared — nothing worth sharing. Clear
+  // the clipboard (same rule as per-match copy v55) so stale content from a
+  // prior copy (match modal entry, CRW empty case, or explicit 📋 on 0 wagers)
+  // can't survive paste.
+  if(!currentMatches.length && !currentWinner.length && !currentGoldenBoot.length){
+    navigator.clipboard.writeText("").then(()=>{
+      toast("No active wagers to share — clipboard cleared", 4000);
+    }).catch(()=>{
+      const ta=document.createElement("textarea");
+      ta.value=""; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast("No active wagers to share — clipboard cleared", 4000);
+    });
+    return;
+  }
 
   const lines = [
     `⚽ ${memberName(acting)}'s recent wagers`,
     `*${first.dm}, ${first.time} → ${nowFmt.dm}, ${nowFmt.time} ${tzLabel}*`,
     ``
   ];
-  rawEvents.forEach((e, idx)=>{
+  const rows = [];
+  currentMatches.forEach(e=>{
     const m = elFor(e.mN);
-    // Suffix only means something when there's more than one record for
-    // this match — disambiguating "which of these is current." A match
-    // with exactly one entry has nothing to disambiguate, so it should
-    // print plain, with no suffix at all.
-    const matchEventCount = rawEvents.filter(x => x.mN === e.mN).length;
-    const isLatestForMatch = rawEvents.findLast(x => x.mN === e.mN) === e;
-    const suffix = (matchEventCount > 1 && isLatestForMatch) ? " (CURRENT)" : "";
-    if(idx > 0) lines.push(``); // blank line between every wager row
-    if(!m){ lines.push(`M${e.mN} →   (match not found)${suffix}`); return; }
+    if(!m){ rows.push(`M${e.mN} →   (match not found)`); return; }
     // Abbreviated matchup — flag + 3-letter code, no full country name —
     // to avoid long lines wrapping when pasted into WhatsApp on mobile.
     // No date prefix: within this single 3-hour-window copy, matchups are
     // unique, so a per-line date adds no disambiguating value.
     const match = `${teamFlag(m.a)} ${teamCode(m.a)}   v   ${teamFlag(m.b)} ${teamCode(m.b)}`;
-    lines.push(e.type==="delete" ? `${match} →   cleared${suffix}` : `${match} →   ${e.a}-${e.b}${suffix}`);
+    rows.push(`${match} →   ${e.a}-${e.b}`);
+  });
+  if(currentWinner.length){
+    rows.push(`🏆 World Cup Winner → ${currentWinner.map(e => `${teamFlag(e.name)} ${e.name}`).join(", ")}`);
+  }
+  if(currentGoldenBoot.length){
+    rows.push(`🥾 Golden Boot → ${currentGoldenBoot.map(e => {
+      const team = e.b || "";
+      const code = team ? ` (${teamCode(team)})` : "";
+      return `${teamFlag(team)} ${e.name}${code}`;
+    }).join(", ")}`);
+  }
+  rows.forEach((row, idx)=>{
+    if(idx > 0) lines.push(``); // blank line between every wager row
+    lines.push(row);
   });
   const txt = lines.join("\n");
 
@@ -1001,7 +2776,7 @@ function renderLeaderboard(){
   const totalWagers = Object.values(STATE.wagers).reduce((s,m)=>s+Object.keys(m).length,0);
   const pot = totalWagers * 100;
   const potEl=$("#potCard");
-  if(potEl) potEl.innerHTML=`<div class="pot-amt">Total Pot = INR ${pot.toLocaleString('en-IN')}</div><div class="pot-sub">${totalWagers} wager${totalWagers!==1?'s':''} placed · ₹100 each</div>`;
+  if(potEl) potEl.innerHTML=`<div class="pot-title">Match Leaderboard</div><div class="pot-amt">Total Pot = INR ${pot.toLocaleString('en-IN')}</div><div class="pot-sub">${totalWagers} wager${totalWagers!==1?'s':''} placed · ₹100 each</div>`;
 
   // Payout splits for top 3
   const splits=[0.5,0.3,0.2];
@@ -1152,16 +2927,15 @@ function koCardHTML(k, dd){
   </div>`;
 }
 function renderSchedule(){
-  const fl=$("#freshline");
-  if(fl){
-    if(STATE.lastRefresh){ const d=disp(STATE.lastRefresh); fl.className="freshline"; fl.textContent=`Updated ${d.date}, ${d.time} ${d.tz}`; }
-    else { fl.className="freshline stale"; fl.textContent="Scores not refreshed yet — tap ↻ Scores"; }
-  }
   const rec={}; standings().forEach(s=>rec[s.id]={w:s.w6+s.w3,l:s.l});
   const now=Date.now();
+  // Current calendar day in the app's SELECTED timezone, formatted the same way
+  // as each group's label (disp().date) so "today" matches the right day group
+  // regardless of device timezone or whether matches have kicked off yet.
+  const todayLabel = disp(now).date;
   const rows=[];
-  MATCHES.forEach(m=>rows.push({kind:"g",m,ko:m.koUTC}));
-  KO.forEach(k=>rows.push({kind:"k",k,ko:k[5]}));
+  if(PHASE === "knockout") KO.forEach(k=>rows.push({kind:"k",k,ko:k[5]}));
+  else MATCHES.forEach(m=>rows.push({kind:"g",m,ko:m.koUTC}));
   const groups=[];
   rows.forEach(row=>{
     const dd=disp(row.ko); row.dd=dd;
@@ -1184,12 +2958,17 @@ function renderSchedule(){
     const isKO = g.rows[0].kind==="k";
     const tags=[]; g.rows.forEach(row=>{ const t=row.kind==="g"?row.m.group:row.k[1]; if(!tags.includes(t)) tags.push(t); });
     g.summary = isKO ? tags.join(" · ") : "Grp "+tags.join("·");
-    const allDone = g.rows.every(row=>!!matchResult(row.kind==="g"?row.m.n:row.k[0]));
     const anyWagers = g.rows.some(row=>{
       const n = row.kind==="g" ? row.m.n : row.k[0];
       return Object.keys(STATE.wagers[n]||{}).length > 0;
     });
-    g.era = allDone ? "past" : g.started ? "today" : anyWagers ? "future" : "future-empty";
+    // "today" = the actual current calendar day (app timezone) — not merely a
+    // day whose first match has kicked off. So today is green ALL day: before
+    // kickoff, in-progress, and after results. A started-but-not-today day is
+    // past; an unstarted future day is future / future-empty.
+    g.era = (g.label===todayLabel) ? "today"
+          : g.started ? "past"
+          : anyWagers ? "future" : "future-empty";
   });
   const cab=$("#collapseAllBtn");
   if(cab) cab.textContent = groups.some(g=>dayState[g.key]!=="collapsed") ? "Collapse all" : "Expand all";
@@ -1245,12 +3024,24 @@ function renderLog(){
     sel.value = LOGFILTER==="all" ? "all" : acting;
   }
 
-  if(!STATE.log.length){ $("#logfeed").innerHTML='<div class="empty">No activity yet.</div>'; return; }
-  // Filter applies ONLY to owner-bearing entries (wager new/edit/delete).
-  // System-level entries (refresh, member-added, result) have no owner and
-  // always stay visible regardless of filter — pool-wide context is useful
-  // no matter whose personal activity you're looking at.
-  const filtered = LOGFILTER==="all" ? STATE.log : STATE.log.filter(e => e.owner===undefined || e.owner===acting);
+  renderDepthToggle();
+
+  // Depth: in "recent" view show only the last LOG_LIVE rows. slice() is a
+  // no-op when STATE.log is already the capped server slice, and trims to the
+  // recent window once the full log has been loaded via "Show all".
+  const depth = LOGVIEW==="all" ? STATE.log : STATE.log.slice(0, LOG_LIVE);
+
+  // Owner filter: "Me" shows ONLY the acting user's own wager activity
+  // (new/edit/delete). System entries (refresh/result/member-added) carry no
+  // owner and are intentionally excluded from "Me" — it's a "what I did" view,
+  // not pool-wide noise. They remain visible in "All".
+  const filtered = LOGFILTER==="all" ? depth : depth.filter(e => String(e.owner)===String(acting));
+
+  if(!filtered.length){
+    $("#logfeed").innerHTML = '<div class="empty">'
+      + (LOGFILTER==="all" ? "No activity yet." : "No activity from you yet.") + '</div>';
+    return;
+  }
   const html = filtered.map(e=>{
     if(e.type==="member"){
       return `<div class="logitem member"><div class="tl"><i></i></div><div class="logbody">
@@ -1264,9 +3055,24 @@ function renderLog(){
     }
     if(e.type==="result"){
       const m=elFor(e.mN);
+      if(!m) return "";
       return `<div class="logitem result"><div class="tl"><i></i></div><div class="logbody">
         <div class="logtext"><b>${memberName(e.by)}</b> refreshed result · ${m.a} <span class="sl">${e.a}–${e.b}</span> ${m.b}</div>
         <div class="logtime">${fmtClock(e.t)} · M${e.mN}</div></div></div>`;
+    }
+    if(e.mN==="bonusWinner"){
+      const proxy = e.by!==e.owner ? ` for <b>${memberName(e.owner)}</b>` : "";
+      const verb = e.type==="delete" ? "removed" : "entered";
+      return `<div class="logitem ${e.type}"><div class="tl"><i></i></div><div class="logbody">
+        <div class="logtext"><b>${memberName(e.by)}</b> ${verb}${proxy} World Cup Winner wager · ${teamFlag(e.name)} <b>${esc(e.name)}</b>${e.backfill?'<span class="bf">backfill</span>':''}</div>
+        <div class="logtime">${fmtClock(e.t)} · Tournament</div></div></div>`;
+    }
+    if(e.mN==="bonusGoldenBoot"){
+      const proxy = e.by!==e.owner ? ` for <b>${memberName(e.owner)}</b>` : "";
+      const verb = e.type==="delete" ? "removed" : "entered";
+      return `<div class="logitem ${e.type}"><div class="tl"><i></i></div><div class="logbody">
+        <div class="logtext"><b>${memberName(e.by)}</b> ${verb}${proxy} Golden Boot wager · ${teamFlag(e.b)} <b>${esc(e.name)}</b> <span class="ts-code">(${teamCode(e.b)})</span>${e.backfill?'<span class="bf">backfill</span>':''}</div>
+        <div class="logtime">${fmtClock(e.t)} · Tournament</div></div></div>`;
     }
     const m=elFor(e.mN);
     if(!m) return "";
@@ -1282,7 +3088,48 @@ function renderLog(){
   }).join("");
   $("#logfeed").innerHTML=html;
 }
-function renderAll(){ renderLeaderboard(); renderSchedule(); renderLog(); }
+function renderAll(){
+  renderLeaderboard(); renderSchedule(); renderLog();
+  renderTournamentSurface();
+}
+
+function renderTournamentSurface(){
+  renderSafe("Tournament pot", renderBonusPot);
+  renderSafe("Golden Boot leaderboard", renderGoldenBootLeaderboardCard);
+  renderSafe("Tournament", renderBonusWinnerCountryView, "bbwCountryView");
+  renderSafe("Tournament", renderBonusWinnerWagererView, "bbwWagererView");
+  renderSafe("Golden Boot", renderGoldenBootPlayerView, "gbwPlayerView");
+  renderSafe("Golden Boot", renderGoldenBootWagererView, "gbwWagererView");
+}
+
+// The "Show all / Show recent" depth control beside the Activity filter.
+// Hidden unless the server (logHasMore) says older rows exist beyond the cap.
+function renderDepthToggle(){
+  const el = $("#logDepthToggle");
+  if(!el) return;
+  if(!STATE.logHasMore){ el.style.display="none"; return; }
+  el.style.display="";
+  el.disabled = false;
+  if(LOGVIEW==="all"){
+    el.innerHTML = 'Showing all · <span class="act">Show recent</span>';
+  } else {
+    const act = LOGFILTER==="all" ? "Show all" : "Show all yours";
+    el.innerHTML = 'Showing last ' + LOG_LIVE + ' · <span class="act">' + act + '</span>';
+  }
+}
+
+// Apply a log payload from any response (init/save/delete/refresh). These all
+// return the RECENT slice (Code.gs readLogRecent), so we replace the buffer and
+// reset depth to live — after acting you snap back to recent activity, and
+// "Show all" becomes a fresh, deliberate re-selection.
+function applyLogResponse(r){
+  if(r.log) STATE.log = r.log;
+  if(r.logHasMore !== undefined) STATE.logHasMore = r.logHasMore;
+  logFull = false;
+  LOGVIEW = "recent";
+  updateCopyRecentWagersBtn();
+  renderLog();
+}
 
 /* ---------- Sheet (modal) ---------- */
 function openSheet(html){ $("#sheet").innerHTML=`<div class="grab"></div><button class="closebtn" onclick="closeSheet()">✕</button>`+html; $("#sheet").classList.add("show"); $("#scrim").classList.add("show"); $("#sheet").scrollTop=0; }
@@ -1290,13 +3137,22 @@ function closeSheet(){ $("#sheet").classList.remove("show"); $("#scrim").classLi
 $("#scrim").onclick=closeSheet;
 
 /* ---------- Match sheet ---------- */
+// Silent wipe — no toast. Used on match-modal first entry so stale clipboard
+// content can't be pasted by mistake; explicit copy buttons use toast instead.
+function clearClipboardSilent(){
+  navigator.clipboard.writeText("").catch(()=>{
+    const ta=document.createElement("textarea");
+    ta.value=""; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy");
+    document.body.removeChild(ta);
+  });
+}
+
 // Shared by both the Schedule-card copy icon and the match-detail sheet's
 // copy icon — builds a plain-text summary (match info + all current wagers)
 // and copies it to the clipboard, for pasting into WhatsApp.
-// silent=true suppresses the toast — used for the automatic bootstrap-on-
-// modal-open (the user didn't explicitly ask to copy, so no need to tell
-// them something happened); silent=false/omitted is used by the actual
-// "Copy all Wagers" button tap, which should always confirm visibly.
+// silent=true suppresses the toast (empty-match clear only); silent=false/
+// omitted is used by the explicit "Copy wagers for match" button tap.
 function copyMatchWagersToClipboard(n, silent){
   const m=elFor(n); if(!m) return;
   const wgs=STATE.wagers[n]||{}; const owners=Object.keys(wgs);
@@ -1340,7 +3196,7 @@ function copyMatchWagersToClipboard(n, silent){
   });
 }
 
-function openMatch(n, preloadOwner){
+function openMatch(n, preloadOwner, reopen){
   const m=elFor(n); const r=matchResult(n); const locked=isLocked(m);
   const wgs = STATE.wagers[n]||{};
   const owners = Object.keys(wgs);
@@ -1452,12 +3308,11 @@ function openMatch(n, preloadOwner){
   list+=`</div><div style="height:24px"></div>`;
 
   openSheet(head+scoreBlk+form+list);
-  // Bootstrap the clipboard with THIS match's current state the instant the
-  // modal opens — not just when "Copy all Wagers" is explicitly tapped.
-  // Ensures no dangling clipboard content survives from a previously-opened,
-  // unrelated match; opening any match always reflects its real current
-  // wagers (or clears the clipboard if there are none) immediately.
-  copyMatchWagersToClipboard(n, true);
+  // First entry only (not save/clear re-render): silently clear clipboard so
+  // stale content from a prior copy can't survive an accidental paste. Reverses
+  // v56 bootstrap (which wrote all match wagers here — confusing for non-admins).
+  // To share: explicit 📋 or Copy Recent Wagers.
+  if(!reopen) clearClipboardSilent();
   // Tap an existing wager row to load it into the form for editing —
   // admins can tap ANY row (proxy-edit); non-admins only their own.
   document.querySelectorAll("[data-tapowner]").forEach(row=>row.onclick=()=>{
@@ -1502,9 +3357,9 @@ function openMatch(n, preloadOwner){
         const r = await api("delete", { token: TOKEN, matchN: n, ownerId: oid });
         if(!r.ok){ toast("Error: "+(r.error||"unknown"), 4000); return; }
         if(r.wagers) STATE.wagers = mergeWagers(r.wagers);
-        if(r.log) STATE.log = r.log;
+        applyLogResponse(r);
         toast("Wager removed");
-        renderAll(); renderActing(); openMatch(n); // re-render so the row disappears
+        renderAll(); renderActing(); openMatch(n, undefined, true); // re-render so the row disappears
         return;
       } finally {
         SAVE_IN_FLIGHT = false;
@@ -1554,9 +3409,9 @@ function saveWager(n, locked){
     if(!r.ok){ toast("Error: " + (r.error||"unknown")); return; }
     // merge server wagers into STATE
     if(r.wagers) STATE.wagers = mergeWagers(r.wagers);
-    if(r.log) STATE.log = r.log;
+    applyLogResponse(r);
     toast(isProxy ? `Saved for ${memberName(ownerId)} — logged` : "Wager saved");
-    renderAll(); renderActing(); openMatch(n);
+    renderAll(); renderActing(); openMatch(n, undefined, true);
   }).finally(()=>{
     SAVE_IN_FLIGHT = false;
     // btn itself may no longer exist (openMatch() re-rendered the sheet on
@@ -1637,8 +3492,9 @@ function refreshScores(silent){
     STATE.results = Object.fromEntries(
       Object.entries(r.results).map(([k,v]) => [+k, v])
     );
-    if(r.log) STATE.log = r.log;
+    applyLogResponse(r);
     STATE.lastRefresh = Date.now();
+    renderScoreStatus();
     renderAll();
     if(!silent) toast(r.fromCache ? "Scores refreshed (cached)" : "Live scores updated ✓");
   });
@@ -1681,52 +3537,256 @@ function addMember(){
 }
 
 /* ---------- Export ---------- */
-function exportCSV(){
-  const totalWagers = Object.values(STATE.wagers).reduce((s,m)=>s+Object.keys(m).length,0);
-  if(totalWagers===0){ toast("Data still loading — try again in a moment"); return; }
-  const q = v => `"${String(v).replace(/"/g,'""')}"`;
-  const lines=[["Match-#","Date","Group","Home","Away","Owner","Pick-Home","Pick-Away","Result-Home","Result-Away","Points","Entered-by","Backfill"].join(",")];
-  let count=0;
-  for(const n in STATE.wagers){
-    const m=elFor(+n); if(!m) continue;
+function exportTimestampPdt(){
+  const d = new Date(Date.now() + TZS.PDT.off*60000);
+  const pad = n => String(n).padStart(2,"0");
+  return `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}-${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}-PDT`;
+}
+
+function csvCell(v){
+  return `"${String(v==null ? "" : v).replace(/"/g,'""')}"`;
+}
+
+function csvRows(headers, rows){
+  return [headers, ...rows].map(row => row.map(csvCell).join(",")).join("\n");
+}
+
+function buildMatchWagersCsv(){
+  const rows = [];
+  Object.keys(STATE.wagers || {}).sort((a,b)=>+a-+b).forEach(n=>{
+    const m=elFor(+n); if(!m) return;
     const r=matchResult(+n);
-    for(const oid in STATE.wagers[n]){
-      const w=STATE.wagers[n][oid]; if(!w) continue;
-      const p=scoreWager(w,r); const dd=disp(m.koUTC);
-      lines.push([
+    const dd=disp(m.koUTC);
+    Object.keys(STATE.wagers[n] || {}).sort((a,b)=>memberName(a).localeCompare(memberName(b))).forEach(oid=>{
+      const w=STATE.wagers[n][oid]; if(!w) return;
+      const p=scoreWager(w,r);
+      rows.push([
         m.n,
-        q(`${dd.date} ${dd.time} ${dd.tz}`),
+        `${dd.date} ${dd.time} ${dd.tz}`,
         m.group,
-        q(m.a),
-        q(m.b),
-        q(memberName(oid)),
-        w.a, w.b,
-        r ? r.a : "", r ? r.b : "",
+        m.a,
+        m.b,
+        memberName(oid),
+        w.a,
+        w.b,
+        r ? r.a : "",
+        r ? r.b : "",
         p===null ? "" : p,
-        q(memberName(w.by)),
+        memberName(w.by),
         w.backfill ? "yes" : ""
-      ].join(","));
-      count++;
-    }
+      ]);
+    });
+  });
+  return {
+    count: rows.length,
+    csv: csvRows(["Match-#","Date","Group","Home","Away","Owner","Pick-Home","Pick-Away","Result-Home","Result-Away","Points","Entered-by","Backfill"], rows)
+  };
+}
+
+function buildWorldCupWinnerCsv(){
+  const rows = [];
+  Object.keys(STATE.bonusWinnerPicks || {}).sort((a,b)=>memberName(a).localeCompare(memberName(b))).forEach(oid=>{
+    bonusWinnerTeamsFor(oid).slice().sort((a,b)=>a.localeCompare(b)).forEach(team=>{
+      rows.push([memberName(oid), team, teamCode(team)]);
+    });
+  });
+  return {
+    count: rows.length,
+    csv: csvRows(["Owner","Team","Team-Code"], rows)
+  };
+}
+
+function buildGoldenBootCsv(){
+  const players = gbwAllPlayerMap();
+  const rows = [];
+  Object.keys(STATE.bonusGoldenBootPicks || {}).sort((a,b)=>memberName(a).localeCompare(memberName(b))).forEach(oid=>{
+    bonusGoldenBootPlayersFor(oid)
+      .map(p => players[p.key] || gbwHydratePlayer(p))
+      .sort((a,b)=>(a.shortName||a.name||"").localeCompare(b.shortName||b.name||""))
+      .forEach(p=>{
+        rows.push([
+          memberName(oid),
+          p.key || "",
+          p.fullName || p.name || p.shortName || "",
+          p.shortName || p.name || "",
+          p.team || "",
+          p.code || teamCode(p.team || ""),
+          p.goals != null ? p.goals : "",
+          p.rank != null ? p.rank : "",
+          p.fifaPersonId || ""
+        ]);
+      });
+  });
+  return {
+    count: rows.length,
+    csv: csvRows(["Owner","Player-Key","Player-Name","Short-Name","Team","Team-Code","Goals","Rank","Fifa-Person-Id"], rows)
+  };
+}
+
+function buildTopScorersCsv(){
+  const rows = currentTopScorersBoard().map(s=>[
+    s.rank != null ? s.rank : "",
+    s.name || "",
+    s.team || "",
+    s.goals != null ? s.goals : "",
+    s.assists != null ? s.assists : "",
+    s.minutes != null ? s.minutes : "",
+    s.mp != null ? s.mp : "",
+    s.fifaPersonId || ""
+  ]);
+  return {
+    count: rows.length,
+    csv: csvRows(["rank","name","team","goals","assists","minutes","mp","fifaPersonId"], rows)
+  };
+}
+
+const ZIP_CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for(let n=0;n<256;n++){
+    let c=n;
+    for(let k=0;k<8;k++) c = (c&1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1);
+    table[n]=c>>>0;
   }
-  const csv=lines.join("\n");
-  openSheet(`<h2>Export</h2><div class="sub">${count} wager${count!==1?'s':''} exported as CSV.</div>
-    <a id="dl" class="btn" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">Download CSV</a>
-    <textarea class="exp" readonly>${csv.replace(/</g,"&lt;")}</textarea>`);
+  return table;
+})();
+
+function zipCrc32(bytes){
+  let c = 0xFFFFFFFF;
+  for(let i=0;i<bytes.length;i++) c = ZIP_CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function zipDosTime(date){
+  const time = (date.getHours()<<11) | (date.getMinutes()<<5) | Math.floor(date.getSeconds()/2);
+  const dosDate = ((date.getFullYear()-1980)<<9) | ((date.getMonth()+1)<<5) | date.getDate();
+  return { time, date: dosDate };
+}
+
+function u16(n){ return [n&255,(n>>>8)&255]; }
+function u32(n){ return [n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]; }
+
+function makeZipBlob(files){
+  const enc = new TextEncoder();
+  const now = zipDosTime(new Date());
+  const chunks = [];
+  const central = [];
+  let offset = 0;
+  files.forEach(file=>{
+    const nameBytes = enc.encode(file.name);
+    const data = enc.encode(file.csv);
+    const crc = zipCrc32(data);
+    const local = new Uint8Array([
+      ...u32(0x04034b50), ...u16(20), ...u16(0), ...u16(0),
+      ...u16(now.time), ...u16(now.date), ...u32(crc),
+      ...u32(data.length), ...u32(data.length), ...u16(nameBytes.length), ...u16(0)
+    ]);
+    chunks.push(local, nameBytes, data);
+    central.push({
+      nameBytes, crc, size:data.length, offset,
+      header:new Uint8Array([
+        ...u32(0x02014b50), ...u16(0x0314), ...u16(20), ...u16(0), ...u16(0),
+        ...u16(now.time), ...u16(now.date), ...u32(crc),
+        ...u32(data.length), ...u32(data.length), ...u16(nameBytes.length),
+        ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0)
+      ])
+    });
+    offset += local.length + nameBytes.length + data.length;
+  });
+  const centralStart = offset;
+  central.forEach(entry=>{
+    const tail = new Uint8Array([...u32(entry.offset)]);
+    chunks.push(entry.header, tail, entry.nameBytes);
+    offset += entry.header.length + tail.length + entry.nameBytes.length;
+  });
+  const centralSize = offset - centralStart;
+  chunks.push(new Uint8Array([
+    ...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length),
+    ...u32(centralSize), ...u32(centralStart), ...u16(0)
+  ]));
+  return new Blob(chunks,{type:"application/zip"});
+}
+
+function downloadBlob(blob, name){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=name;
+  a.style.display="none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 30000);
+}
+
+function exportCSV(){
+  if(!STATE){ toast("Data still loading — try again in a moment"); return; }
+  const stamp = exportTimestampPdt();
+  const match = buildMatchWagersCsv();
+  const wcw = buildWorldCupWinnerCsv();
+  const gb = buildGoldenBootCsv();
+  const top = buildTopScorersCsv();
+  const files = [
+    { key:"matches", label:"Match wagers", name:`l84-matches-wagers-${stamp}.csv`, count:match.count, csv:match.csv },
+    { key:"wcw", label:"World Cup Winner wagers", name:`l84-world-cup-winner-wagers-${stamp}.csv`, count:wcw.count, csv:wcw.csv },
+    { key:"gb", label:"Golden Boot wagers", name:`l84-golden-boot-wagers-${stamp}.csv`, count:gb.count, csv:gb.csv },
+    { key:"top", label:"Top Scorers", name:`l84-top-scorers-${stamp}.csv`, count:top.count, csv:top.csv }
+  ];
+  const zipName = `l84-export-${stamp}.zip`;
+  const downloadZip = ()=>downloadBlob(makeZipBlob(files), zipName);
+  openSheet(`<h2>Export</h2><div class="sub">Downloading ${esc(zipName)}</div>`
+    + `<button id="downloadAllCsvBtn" class="btn" style="width:100%;margin-bottom:10px">Download export ZIP</button>`
+    + `<div class="note" style="margin-bottom:8px">Files:</div>`
+    + `<ul class="note" style="margin-top:0;padding-left:18px">`
+    + files.map(f=>`<li><code>${esc(f.name)}</code> · ${f.count} row${f.count!==1?'s':''}</li>`).join("")
+    + `</ul>`
+    + `<div class="note">The ZIP contains the four CSV artifacts above.</div>`);
+  const retry = $("#downloadAllCsvBtn");
+  if(retry) retry.onclick = downloadZip;
   try{
-    const blob=new Blob([csv],{type:"text/csv"});
-    const url=URL.createObjectURL(blob);
-    const a=$("#dl"); a.href=url; a.download="l84-fifa-2026-wagers.csv";
-  }catch(e){ const a=$("#dl"); if(a) a.style.display="none"; }
+    downloadZip();
+    toast("Export started — ZIP with 4 CSVs", 3000);
+  }catch(e){
+    toast("Couldn't create export ZIP", 4000);
+  }
 }
 
 /* ---------- Tabs ---------- */
+function setPhase(phase){
+  const prev = PHASE;
+  PHASE = phase === "knockout" ? "knockout" : "group";
+  document.querySelectorAll(".phase-tab").forEach(x=>x.classList.toggle("active", x.dataset.phase===PHASE));
+  const card = $("#phaseCard");
+  if(card) card.className = "phase-card " + PHASE;
+  const koStarted = Date.now() >= new Date(KNOCKOUT_START_UTC).getTime();
+  document.querySelectorAll(".phase-tab").forEach(x=>{
+    const sub = x.querySelector(".phase-sub");
+    if(!sub) return;
+    sub.textContent = koStarted
+      ? (x.dataset.phase === "knockout" ? "Current" : "Archive")
+      : (x.dataset.phase === "group" ? "Current" : (PHASE === "knockout" ? "Preview" : "Coming soon"));
+  });
+  if(prev !== PHASE){
+    dayState = {};
+    if($("#view-schedule")?.classList.contains("active")) renderSchedule();
+  }
+}
+document.querySelectorAll(".phase-tab").forEach(t=>t.onclick=()=>setPhase(t.dataset.phase));
+
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   t.classList.add("active");
   $("#view-"+t.dataset.tab).classList.add("active");
+  syncAppbarStickyOffset();
 });
+document.querySelectorAll(".bb-subtab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".bb-subtab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".bb-sub-view").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  $("#bbsub-"+t.dataset.bbsub).classList.add("active");
+  syncAppbarStickyOffset();
+});
+window.addEventListener("resize", syncAppbarStickyOffset, { passive: true });
 $("#refreshBtn").onclick=()=>refreshScores();
 $("#exportBtn").onclick=exportCSV;
 $("#addMemberBtn").onclick=addMember;
@@ -1739,21 +3799,44 @@ function showIdentityScreen(canCancel){
     `<button class="idname" data-mid="${m.id}">${m.name}${ADMINS.includes(m.name)?'<span class="id-admin-tag"> ★</span>':''}</button>`
   ).join("") + `<button id="idAddBtn">+ Add member <span style="font-size:10px;opacity:.7;font-weight:600">(admin only)</span></button>`;
   list.querySelectorAll(".idname").forEach(btn=>btn.onclick=async()=>{
+    if(btn._orig===undefined) btn._orig = btn.innerHTML;  // true label, captured once
+    const orig = btn._orig;
     const member = STATE.members.find(m=>m.id===btn.dataset.mid);
-    const name = member ? member.name : btn.textContent.replace(/\s*★/g,'').trim();
-    toast("Setting identity…");
+    const name = member ? member.name : orig.replace(/<[^>]*>/g,'').replace(/\s*★/g,'').trim();
+    // Immediate in-overlay feedback: name the choice and mark it in-progress, and
+    // disable the whole list so an impatient second tap can't fire a second claim.
+    // (The toast() used elsewhere is invisible during this flow — it renders at
+    // z-index 90, behind the z-index 999 picker overlay — so the feedback has to
+    // live inside the picker itself.)
+    const idBtns = list.querySelectorAll(".idname, #idAddBtn");
+    idBtns.forEach(b=>b.disabled=true);
+    btn.classList.remove("iderror");
+    btn.classList.add("confirming");
+    btn.textContent = "Confirming " + name + "…";
     const r = await serverClaimIdentity(name);
-    if(!r.ok){ 
-      toast("⚠ " + (r.error||"Server error — try again"), 5000); 
+    if(!r.ok){
       console.error("claimIdentity failed:", r);
-      return; 
+      // Surface the failure in-overlay (the toast would be hidden) and let the
+      // user retry the same name or pick a different one.
+      btn.classList.remove("confirming");
+      btn.classList.add("iderror");
+      btn.textContent = "⚠ Couldn't confirm — retry";
+      idBtns.forEach(b=>b.disabled=false);
+      return;
     }
     TOKEN = r.token;
     acting = r.id;
     Session.set("l84_token", TOKEN);
     IDENTITY_CONFIRMED = true;
+    btn.classList.remove("confirming");
+    btn.innerHTML = orig;
+    idBtns.forEach(b=>b.disabled=false);
     screen.style.display="none";
     renderActing(); renderAll();
+    const seedRefreshEntry = STATE.log.find(e => e.type === "refresh");
+    const staleMs = 30 * 60 * 1000;
+    const isStale = !seedRefreshEntry || (Date.now() - new Date(seedRefreshEntry.t).getTime()) > staleMs;
+    initLiveWarm(isStale);
   });
   $("#idAddBtn").onclick=()=>{
     if(!acting || !ADMINS.includes(memberName(acting))){
@@ -1800,10 +3883,21 @@ $("#actingReset").onclick=async()=>{
 };
 $("#copyRecentWagersBtn").onclick=copyRecentWagers;
 $("#logFilterSel").onchange=(e)=>{ LOGFILTER = e.target.value; renderLog(); };
+$("#logDepthToggle").onclick = async () => {
+  const el = $("#logDepthToggle");
+  if(LOGVIEW==="all"){ LOGVIEW="recent"; renderLog(); return; }   // collapse — client-side, free
+  if(logFull){ LOGVIEW="all"; renderLog(); return; }              // already fetched — free
+  el.disabled = true; el.textContent = "Loading…";                // fetch the full log once
+  const r = await serverFullLog();
+  if(r && r.ok && r.log){ STATE.log = r.log; logFull = true; LOGVIEW = "all"; }
+  else { console.error("fullLog failed:", r); }
+  renderLog();
+};
 document.querySelectorAll("[data-tz]").forEach(b=>b.onclick=()=>{
   TZSTATE=b.dataset.tz;
   document.querySelectorAll("[data-tz]").forEach(x=>x.classList.toggle("active", x===b));
   Session.set('l84_tz', TZSTATE);
+  renderScoreStatus();
   renderSchedule();
 });
 $("#collapseAllBtn").onclick=()=>{
@@ -1813,6 +3907,7 @@ $("#collapseAllBtn").onclick=()=>{
 };
 $("#rulesBtn").onclick=openRules;
 $("#groupStandingsBtn").onclick=showGroupStandings;
+$("#topScorersBtn").onclick=showTopScorers;
 $("#ghToggle").onclick=()=>{
   const body=$("#ghBody"), btn=$("#ghToggle");
   const open=body.hasAttribute("hidden");
@@ -1826,8 +3921,33 @@ window.closeSheet=closeSheet;
    Backend bridge — fetch() to Google Apps Script JSON API
    ================================================================ */
 
-// The deployed Apps Script web app URL (the /exec endpoint):
-const API_URL = "https://script.google.com/macros/s/AKfycbzwWUZbpzBGxPjlw1sA1XmlB8uQSNswvPhO_Pe-teXVKWTJk192_oPZNF54z89o3tE/exec";
+// Backend auto-detect — the SAME file is safe in both places, so a test build
+// can't accidentally hit production (or vice-versa). Known dev contexts
+// (file://, localhost, or a /l84-test/ path) → the TEST twin; everything else,
+// including the real GitHub Pages site, → PRODUCTION. An unrecognized host
+// defaults to PROD on purpose: fail safe toward "don't touch the twin", never
+// toward leaking test config onto the live site.
+const PROD_API = "https://script.google.com/macros/s/AKfycbzwWUZbpzBGxPjlw1sA1XmlB8uQSNswvPhO_Pe-teXVKWTJk192_oPZNF54z89o3tE/exec";
+const TEST_API = "https://script.google.com/macros/s/AKfycbwV0uLiwd0Q-zEB2tmm7n_wlSWdzf0zMUKlyRn-zsr_OpJY7GwKJ0HnHP_5zg7fYROc/exec";
+const IS_TEST  = location.protocol === "file:"
+              || location.hostname === "localhost"
+              || location.hostname === "127.0.0.1"
+              || location.pathname.includes("/l84-test/");
+const API_URL  = IS_TEST ? TEST_API : PROD_API;
+
+// Unmistakable on-screen marker when running against the twin, so you always
+// know which world you're in before touching anything.
+if (IS_TEST) {
+  console.log("L'84 → TEST twin backend:", API_URL);
+  try {
+    const b = document.createElement("div");
+    b.textContent = "TEST";
+    b.style.cssText = "position:fixed;top:6px;right:6px;z-index:99999;background:#C9462F;color:#fff;"
+      + "font:700 10px/1 system-ui,sans-serif;padding:4px 7px;border-radius:5px;letter-spacing:.08em;"
+      + "opacity:.92;pointer-events:none";
+    document.body.appendChild(b);
+  } catch(e){}
+}
 
 let TOKEN = null; // device identity token, stored in localStorage
 
@@ -1868,17 +3988,25 @@ async function serverRefreshScores() {
 async function serverClaimIdentity(name) {
   return api("claim", { name });
 }
+async function serverFullLog() {
+  return api("fullLog", { token: TOKEN || "" });
+}
+async function serverTopScorers() {
+  return api("topScorers", { token: TOKEN || "" });
+}
 
 /* ---------- Boot ---------- */
 (async function init() {
   // Pre-initialise STATE so schedule renders immediately
-  STATE = { members: [], wagers:{}, results:{}, log:[], you:null, lastRefresh:null };
+  STATE = { members: [], wagers:{}, results:{}, log:[], you:null, lastRefresh:null,
+            bonusWinnerPicks: {}, bonusGoldenBootPicks: {}, topScorers: [] };
 
   // Restore TZ pref
   const tzpref = Session.get("l84_tz");
   if (tzpref && TZS[tzpref]) TZSTATE = tzpref;
   document.querySelectorAll("[data-tz]").forEach(x =>
     x.classList.toggle("active", x.dataset.tz === TZSTATE));
+  setPhase(Date.now() >= new Date(KNOCKOUT_START_UTC).getTime() ? "knockout" : "group");
 
   // Show a loading hint
   const an = $("#actingName"); if (an) an.textContent = "";
@@ -1887,59 +4015,64 @@ async function serverClaimIdentity(name) {
 
   TOKEN = Session.get("l84_token");
 
-  // Fetch everything from the server
-  const data = await api("init", { token: TOKEN || "" });
+  let booted = false;
+  try {
+    const data = await api("init", { token: TOKEN || "" });
 
-  if (!data || data.ok === false) {
-    toast("Couldn't reach the server — pull to refresh", 5000);
+    if (!data || data.ok === false) {
+      toast("Couldn't reach the server — pull to refresh", 5000);
+      if (an) an.textContent = "—";
+      return;
+    }
+
+    STATE = {
+      members: (data.members||[]).map(m => ({ id: m.id, name: m.name })),
+      wagers: mergeWagers(data.wagers),
+      results: data.results || {},
+      log:     data.log     || [],
+      logHasMore: data.logHasMore || false,
+      you:     data.me      || ((data.members||[])[0]||{}).id,
+      bonusWinnerPicks: data.bonusWinnerPicks || {},
+      bonusGoldenBootPicks: data.bonusGoldenBootPicks || {},
+      topScorers: data.topScorers || [],
+      lastRefresh: null
+    };
+    const seedRefreshEntry = STATE.log.find(e => e.type === "refresh");
+    if (seedRefreshEntry) STATE.lastRefresh = new Date(seedRefreshEntry.t).getTime();
+
+    STATE.members.forEach(m => {
+      m.name = m.name.replace(/^Dr\.?\s+/i, "");
+      if (m.name === "You") m.name = "Venu Nair";
+    });
+
+    if (data.me) {
+      acting = data.me;
+      dayState = {};
+      IDENTITY_CONFIRMED = true;
+      renderActing(); renderAll();
+    } else {
+      acting = STATE.you;
+      dayState = {};
+      IDENTITY_CONFIRMED = false;
+      renderActing(); renderAll();
+      showIdentityScreen(false);
+    }
+    booted = true;
+
+    if (data.me) {
+      const seedRefreshEntry = STATE.log.find(e => e.type === "refresh");
+      const staleMs = 30 * 60 * 1000;
+      const isStale = !seedRefreshEntry || (Date.now() - new Date(seedRefreshEntry.t).getTime()) > staleMs;
+      initLiveWarm(isStale);
+    }
+  } catch (e) {
+    console.error("[init]", e);
+    toast("Something went wrong loading — try refreshing", 5000);
     if (an) an.textContent = "—";
-    return;
+  } finally {
+    $("#actingrow")?.classList.remove("loading");
+    if (!booted) renderAll();
   }
-
-  STATE = {
-    members: (data.members||[]).map(m => ({ id: m.id, name: m.name })),
-    wagers: mergeWagers(data.wagers),
-    results: data.results || {},
-    log:     data.log     || [],
-    you:     data.me      || ((data.members||[])[0]||{}).id,
-    lastRefresh: null
-  };
-  // Seed lastRefresh from the activity log so the freshline reflects the true
-  // last-known-good refresh time, even if THIS session never personally
-  // triggered a fetch (e.g. someone else refreshed recently, or our 30-min
-  // staleness guard correctly skipped a redundant auto-fetch).
-  const seedRefreshEntry = STATE.log.find(e => e.type === "refresh");
-  if (seedRefreshEntry) STATE.lastRefresh = new Date(seedRefreshEntry.t).getTime();
-
-  STATE.members.forEach(m => {
-    m.name = m.name.replace(/^Dr\.?\s+/i, "");
-    if (m.name === "You") m.name = "Venu Nair";
-  });
-
-  $("#actingrow")?.classList.remove("loading");
-  if (data.me) {
-    acting = data.me;
-    dayState = {};
-    IDENTITY_CONFIRMED = true;
-    renderActing(); renderAll();
-  } else {
-    acting = STATE.you;
-    dayState = {};
-    IDENTITY_CONFIRMED = false;
-    renderActing(); renderAll();
-    showIdentityScreen(false);
-  }
-
-  // Auto-fetch live scores once, now that identity is known — but only if
-  // (a) identity is ACTUALLY established (data.me present — not the picker
-  // screen, which has no real identity yet), and (b) the data actually looks
-  // stale (last real refresh was 30+ min ago, or never happened). Avoids
-  // redundant fetches when someone else refreshed moments ago, and avoids
-  // logging "unknown" refreshers when nobody's identity has resolved yet.
-  // Silent: no toasts, since the user didn't ask for this.
-  const staleMs = 30 * 60 * 1000;
-  const isStale = !seedRefreshEntry || (Date.now() - new Date(seedRefreshEntry.t).getTime()) > staleMs;
-  if (data.me && isStale) refreshScores(true);
 })();
 
 </script>
