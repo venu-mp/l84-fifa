@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
+  v174 · 2026-06-27 · Timezone selector fix: picking Your Device's TimeZone now
+  persists as an explicit auto choice so the schedule-row TZ button shows the
+  live device label (e.g. PDT) instead of reverting to Change TZ. Clear TZ still
+  removes the sticky choice and restores the initial Change TZ label.
   v173 · 2026-06-27 · Timezone selector prototype (staging): Schedule row now
   keeps selected-TZ / Calif / India beside the refresh status, with a
   mobile-first selector sheet for device timezone, curated pool zones, and
@@ -3340,8 +3344,7 @@ function updateTimezoneControls(){
 }
 function applyTimezone(key){
   TZSTATE = normalizeTzKey(key);
-  if(TZSTATE==="auto") Session.del("l84_tz");
-  else Session.set("l84_tz", TZSTATE);
+  Session.set("l84_tz", TZSTATE);
   updateTimezoneControls();
   renderScoreStatus();
   renderSchedule();
