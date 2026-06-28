@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
+  v177 · 2026-06-27 · Tournament lock rejection/banner polish: failed WCW/Golden
+  Boot saves now apply returned bonusWagerLock so stale clients close promptly;
+  banner copy is Tournament-scoped and includes the displayed lock time.
+  v176 · 2026-06-27 · Tournament lock sync: apply bonusWagerLock from refresh and
+  bonus pick/delete responses so UI tracks Config sheet edits without reload.
+  v175 · 2026-06-27 · Tournament wager lock from Config sheet (via init):
+  bonusWagerLockMatchN resolves to kickoff for WCW/Golden Boot UI lock and banner.
+  Change Config tab cell to move deadline — no redeploy. KNOCKOUT_START_UTC
+  unchanged for Schedule group/KO phase only.
   v174 · 2026-06-27 · Timezone selector fix: picking Your Device's TimeZone now
   persists as an explicit auto choice so the schedule-row TZ button shows the
   live device label (e.g. PDT) instead of reverting to Change TZ. Clear TZ still
@@ -1251,7 +1260,7 @@
   </div>
 
   <div class="view" id="view-bonus">
-    <div class="bb-banner" id="bbBanner">Picks LOCK when the KnockOut stage begins</div>
+    <div class="bb-banner" id="bbBanner">Tournament picks lock at deadline</div>
     <div class="bb-subtabs">
       <button class="bb-subtab" data-bbsub="winner"><span class="gs-new">new</span>🏆 World Cup Winner</button>
       <button class="bb-subtab active" data-bbsub="goldenboot"><span class="gs-new">new</span><img class="bb-subtab-icon" src="golden-boot-icon.png" alt=""> Golden Boot</button>
@@ -1960,8 +1969,32 @@ function bonusWinnerBetCount(){
     .reduce((sum, oid)=>sum + bonusWinnerTeamsFor(oid).length, 0);
 }
 
+function bonusWagerLockInfo(){
+  if(STATE && STATE.bonusWagerLock && STATE.bonusWagerLock.koUTC) return STATE.bonusWagerLock;
+  const row = koMatchById(74);
+  return { matchN: 74, koUTC: row ? row[5] : "2026-06-29T17:00:00Z" };
+}
+
+function bonusWagerLockUtcMs(){
+  const ko = bonusWagerLockInfo().koUTC;
+  const ms = ko ? new Date(ko).getTime() : 0;
+  return isFinite(ms) ? ms : 0;
+}
+
+function bonusLockBannerText(){
+  const n = bonusWagerLockInfo().matchN;
+  const ms = bonusWagerLockUtcMs();
+  const when = ms ? ` · ${dispCompact(ms)}` : "";
+  const fix = (STATE && STATE.koFixtures || {})[n];
+  if(fix && fix.a && fix.b) return `Tournament picks LOCK before ${fix.a} v ${fix.b} (M${n})${when}`;
+  const [a, b] = koTeams(n);
+  if(a && b) return `Tournament picks LOCK before ${a} v ${b} (M${n})${when}`;
+  return `Tournament picks LOCK at M${n} kickoff${when}`;
+}
+
 function bonusWinnerLocked(){
-  return Date.now() >= new Date(KNOCKOUT_START_UTC).getTime();
+  const ms = bonusWagerLockUtcMs();
+  return ms > 0 && Date.now() >= ms;
 }
 
 function canEditBonusWinnerBet(ownerId){
@@ -2184,7 +2217,11 @@ function bbwShowConfirm(team, ownerId){
       yesBtn.disabled = true; yesBtn.textContent = "Clearing…";
       const r = await serverBonusWinnerDelete(ownerId, team);
       closeSheet();
-      if(!r || !r.ok){ toast("Couldn't remove: "+(r&&r.error||"unknown error"), 4000); return; }
+      if(!r || !r.ok){
+        if(applyBonusWagerLockResponse(r)){ renderTournamentSurface(); renderSafe("Tournament banner", updateBonusPulse); }
+        toast("Couldn't remove: "+(r&&r.error||"unknown error"), 4000);
+        return;
+      }
       STATE.bonusWinnerPicks = r.picks || {};
       applyLogResponse(r);
       toast(r.unchanged ? "No matching wager found" : `Removed wager: ${team}${locked && isAdmin ? " (backfill)" : ""}`);
@@ -2195,7 +2232,11 @@ function bbwShowConfirm(team, ownerId){
     yesBtn.disabled = true; yesBtn.textContent = "Saving…";
     const r = await serverBonusWinnerPick(ownerId, team);
     closeSheet();
-    if(!r || !r.ok){ toast("Couldn't save: "+(r&&r.error||"unknown error"), 4000); return; }
+    if(!r || !r.ok){
+      if(applyBonusWagerLockResponse(r)){ renderTournamentSurface(); renderSafe("Tournament banner", updateBonusPulse); }
+      toast("Couldn't save: "+(r&&r.error||"unknown error"), 4000);
+      return;
+    }
     STATE.bonusWinnerPicks = r.picks || {};
     applyLogResponse(r);
     toast(r.unchanged ? `Already picked: ${team}` : `Added wager: ${team}`);
@@ -2417,7 +2458,7 @@ function bonusGoldenBootBetCount(){
 }
 
 function bonusGoldenBootLocked(){
-  return Date.now() >= new Date(KNOCKOUT_START_UTC).getTime();
+  return bonusWinnerLocked();
 }
 
 function canEditBonusGoldenBootBet(ownerId){
@@ -2739,7 +2780,11 @@ function gbwShowConfirm(key, ownerId){
       yesBtn.disabled = true; yesBtn.textContent = "Clearing…";
       const r = await serverBonusGoldenBootDelete(ownerId, key);
       closeSheet();
-      if(!r || !r.ok){ toast("Couldn't remove: "+(r&&r.error||"unknown error"), 4000); return; }
+      if(!r || !r.ok){
+        if(applyBonusWagerLockResponse(r)){ renderTournamentSurface(); renderSafe("Tournament banner", updateBonusPulse); }
+        toast("Couldn't remove: "+(r&&r.error||"unknown error"), 4000);
+        return;
+      }
       STATE.bonusGoldenBootPicks = r.picks || {};
       applyLogResponse(r);
       toast(r.unchanged ? "No matching wager found" : `Removed wager: ${p.shortName || p.name}${locked && isAdmin ? " (backfill)" : ""}`);
@@ -2749,7 +2794,11 @@ function gbwShowConfirm(key, ownerId){
     yesBtn.disabled = true; yesBtn.textContent = "Saving…";
     const r = await serverBonusGoldenBootPick(ownerId, p);
     closeSheet();
-    if(!r || !r.ok){ toast("Couldn't save: "+(r&&r.error||"unknown error"), 4000); return; }
+    if(!r || !r.ok){
+      if(applyBonusWagerLockResponse(r)){ renderTournamentSurface(); renderSafe("Tournament banner", updateBonusPulse); }
+      toast("Couldn't save: "+(r&&r.error||"unknown error"), 4000);
+      return;
+    }
     STATE.bonusGoldenBootPicks = r.picks || {};
     applyLogResponse(r);
     toast(r.unchanged ? `Already picked: ${p.shortName || p.name}` : `Added wager: ${p.shortName || p.name}`);
@@ -2814,11 +2863,12 @@ function updateTournamentTabHighlight(){
 function updateBonusPulse(){
   const banner = $("#bbBanner");
   if(!banner) return;
-  if(Date.now() >= new Date(KNOCKOUT_START_UTC).getTime()){
+  if(bonusWinnerLocked()){
     banner.style.display = "none";
     return;
   }
   banner.style.display = "";
+  banner.textContent = bonusLockBannerText();
   const hasPickedWinner = bonusWinnerTeamsFor(acting).length > 0;
   const hasPickedGoldenBoot = bonusGoldenBootPlayersFor(acting).length > 0;
   const bothDone = hasPickedWinner && hasPickedGoldenBoot;
@@ -3300,13 +3350,23 @@ function renderDepthToggle(){
 // return the RECENT slice (Code.gs readLogRecent), so we replace the buffer and
 // reset depth to live — after acting you snap back to recent activity, and
 // "Show all" becomes a fresh, deliberate re-selection.
+function applyBonusWagerLockResponse(r){
+  if(!r || !r.bonusWagerLock || !r.bonusWagerLock.koUTC) return false;
+  const prevMs = bonusWagerLockUtcMs();
+  const prevN = bonusWagerLockInfo().matchN;
+  STATE.bonusWagerLock = r.bonusWagerLock;
+  return prevMs !== bonusWagerLockUtcMs() || prevN !== r.bonusWagerLock.matchN;
+}
+
 function applyLogResponse(r){
+  if(!r) return;
   if(r.log) STATE.log = r.log;
   if(r.logHasMore !== undefined) STATE.logHasMore = r.logHasMore;
   logFull = false;
   LOGVIEW = "recent";
   updateCopyRecentWagersBtn();
   renderLog();
+  if(applyBonusWagerLockResponse(r)) updateBonusPulse();
 }
 
 /* ---------- Sheet (modal) ---------- */
@@ -4260,7 +4320,7 @@ async function serverTopScorers() {
   // Pre-initialise STATE so schedule renders immediately
   STATE = { members: [], wagers:{}, results:{}, log:[], you:null, lastRefresh:null,
             bonusWinnerPicks: {}, bonusGoldenBootPicks: {}, topScorers: [],
-            koFixtures: {} };
+            koFixtures: {}, bonusWagerLock: bonusWagerLockInfo() };
 
   // Restore TZ pref. Absence/"auto" means follow the device/browser timezone;
   // old PDT/IST localStorage values remain explicit sticky choices.
@@ -4297,6 +4357,7 @@ async function serverTopScorers() {
       bonusGoldenBootPicks: data.bonusGoldenBootPicks || {},
       topScorers: data.topScorers || [],
       koFixtures: data.koFixtures || {},
+      bonusWagerLock: data.bonusWagerLock || bonusWagerLockInfo(),
       lastRefresh: null
     };
     const seedRefreshEntry = STATE.log.find(e => e.type === "refresh");
