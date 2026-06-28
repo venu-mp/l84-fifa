@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
+  v184 · 2026-06-28 · KO score subline compatibility: show Extra Time when an
+  older v87 Results row has et but no ft; v88 backend persists ftA/ftB going forward.
+  v183 · 2026-06-27 · Reverted v182 staging KO demo (fake M73–M76 scores, Testing
+  badge, client-side fixture injection). Real KO score sublines (v179–v181) kept.
+  v181 · 2026-06-27 · KO score sublines bumped 8px → 10px on schedule cards (still
+  below the 22px final score on mobile); modal sublines unchanged at 10px.
+  v180 · 2026-06-27 · KO score subline copy: "Extra Time" / "Penalty Shootout"
+  (stacked two lines, smaller than final score) instead of AET / Pens abbreviations.
+  v179 · 2026-06-27 · Knockout score display + wager rules (pairs Code.gs v87):
+  openfootball ET + pen totals for grading; schedule card and match modal show
+  Extra Time / Penalty Shootout sublines (stacked, smaller type); KO wagers reject
+  equal scores (M73+). formatResultDisplay().
+  v178 · 2026-06-27 · Identity picker add-member fix: "(not you?)" no longer clears
+  the device token — server addMember still needs an admin TOKEN; only acting was
+  kept before, so + Add member on the identity screen silently failed (toast hidden
+  behind z-index 999 overlay). Token is replaced when a different name is claimed.
   v177 · 2026-06-27 · Tournament lock rejection/banner polish: failed WCW/Golden
   Boot saves now apply returned bonusWagerLock so stale clients close promptly;
   banner copy is Tournament-scoped and includes the displayed lock time.
@@ -522,6 +538,7 @@
   @media(max-width:768px){
     .t-name{font-size:16px!important}
     .score{font-size:22px!important}
+    .score-sub-line{font-size:10px!important;max-width:124px}
     .vs{font-size:15px!important}
     .chip{font-size:11px!important;padding:3px 8px!important}
     .m-meta{font-size:12px!important}
@@ -691,6 +708,9 @@
   .match.status-open .t-name{color:var(--green)}
   .vs{font-family:var(--mono); font-size:12px; color:var(--faint); padding:0 2px; white-space:nowrap}
   .score{font-family:var(--mono); font-size:18px; font-weight:800; letter-spacing:.04em}
+  .score-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:52px}
+  .score-sub{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;max-width:128px}
+  .score-sub-line{display:block;font-family:var(--ui);font-size:10px;font-weight:650;color:var(--faint);letter-spacing:.01em;line-height:1.3;text-align:center}
   .m-foot{margin-top:7px; font-size:11px; color:var(--muted); display:flex; gap:6px; align-items:center}
   .m-foot .dot{width:3px;height:3px;border-radius:50%;background:var(--faint)}
   .wcount{color:var(--blue); font-weight:600}
@@ -767,6 +787,8 @@
   .scorebig .tn{font-size:14px;font-weight:700}
   .scorebig .tn.h{text-align:right}
   .scorebig .sc{font-family:var(--mono);font-size:26px;font-weight:800;letter-spacing:.06em;text-align:center}
+  .scorebig .sc .score-sub{display:block;max-width:none;margin:2px 0 4px}
+  .scorebig .sc .score-sub-line{font-size:10px;line-height:1.3}
   .scorebig .sc small{display:block;font-size:9px;letter-spacing:.1em;color:var(--faint);font-weight:700;text-transform:uppercase}
 
   .formrow{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px}
@@ -1562,6 +1584,33 @@ const elFor=n=>MATCHES.find(m=>m.n===n) || (koMatchById(n)?koAsMatch(koMatchById
 const memberName=id=>{const m=STATE.members.find(x=>x.id===id);return m?m.name:"?";};
 function isLocked(m){ return Date.now() >= new Date(m.koUTC).getTime(); }
 function matchResult(n){ return STATE.results[n]||null; }
+function formatResultDisplay(r){
+  if(!r) return { main:"", parts:[], label:"Full-time" };
+  const main = `${r.a}–${r.b}`;
+  const parts = [];
+  let label = "Full-time";
+  if(r.p){
+    const aet = r.et || r.ft;
+    if(aet) parts.push(`Extra Time ${aet[0]}–${aet[1]}`);
+    parts.push(`Penalty Shootout ${r.p[0]}–${r.p[1]}`);
+    label = "Final";
+  } else if(r.et && (!r.ft || r.et[0]!==r.ft[0] || r.et[1]!==r.ft[1])){
+    parts.push(`Extra Time ${r.et[0]}–${r.et[1]}`);
+    label = "Final";
+  }
+  return { main, parts, label };
+}
+function resultSubHTML(parts){
+  if(!parts || !parts.length) return "";
+  return `<span class="score-sub">${parts.map(line=>`<span class="score-sub-line">${line}</span>`).join("")}</span>`;
+}
+function resultScoreHTML(r, forModal){
+  const d = formatResultDisplay(r);
+  if(forModal){
+    return `<div class="sc"><div>${d.main}</div>${resultSubHTML(d.parts)}<small>${d.label}</small></div>`;
+  }
+  return `<span class="score-wrap"><span class="score">${d.main}</span>${resultSubHTML(d.parts)}</span>`;
+}
 function sgn(x){ return x>0?1:(x<0?-1:0); }
 function scoreWager(p, r){
   if(!r) return null;
@@ -3115,7 +3164,7 @@ function matchCardHTML(m, dd, rec){
              : st==="open"?'<span class="chip open">Open</span>'
              : st==="pending"?'<span class="chip locked">Pending</span>'
              : '<span class="chip locked">Locked</span>';
-  const mid = r?`<span class="score">${r.a}–${r.b}</span>`:`<span class="vs">v</span>`;
+  const mid = r ? resultScoreHTML(r, false) : `<span class="vs">v</span>`;
   const wgs = STATE.wagers[m.n]||{};
   const owners = Object.keys(wgs);
   const isAdmin = ADMINS.includes(memberName(acting));
@@ -3523,7 +3572,7 @@ function openMatch(n, preloadOwner, reopen){
     <div class="sub">${dd.date} · ${dd.time} ${dd.tz} · ${venueName}, ${cityName} · ${esc(phaseLabel)}</div>`;
 
   let scoreBlk = r
-    ? `<div class="scorebig"><div class="tn h">${aName}</div><div class="sc">${r.a}–${r.b}<small>Full-time</small></div><div class="tn">${bName}</div></div>`
+    ? `<div class="scorebig"><div class="tn h">${aName}</div>${resultScoreHTML(r, true)}<div class="tn">${bName}</div></div>`
     : (locked
         ? `<div class="lockbox">⏱ <b>Wagers locked</b> — this match has kicked off. No result recorded yet; tap <b>↻ Scores</b> to pull it.</div>`
         : ``);
@@ -3553,7 +3602,11 @@ function openMatch(n, preloadOwner, reopen){
     const preA = myW ? myW.a : '';
     const preB = myW ? myW.b : '';
     const btnLabel = myW ? 'Update wager' : 'Save wager';
+    const koHint = n >= 73
+      ? `<div class="note" style="margin-bottom:8px">Include penalty-shootout goals in your score. Knockout picks must have a winner.</div>`
+      : "";
     form = `<div class="formcard">
+      ${koHint}
       ${myW?`<div class="note" style="margin-bottom:10px">You already have a wager on this match (<b>${myW.a}–${myW.b}</b>). Change it below — the latest before kickoff counts.</div>`:''}
       <div class="formrow">
         <div class="fld"><label>Whose wager</label>
@@ -3717,6 +3770,10 @@ function saveWager(n, locked){
   const ownerId=$("#ownerSel").value;
   const a=parseInt($("#scA").value,10), b=parseInt($("#scB").value,10);
   if(isNaN(a)||isNaN(b)||a<0||b<0){ toast("Enter both scores"); return; }
+  if(n >= 73 && a === b){
+    toast("Knockout wagers must pick a winner (include pen goals, no draw)");
+    return;
+  }
   const isProxy = ownerId!==acting;
   const btn = $("#saveWager");
   SAVE_IN_FLIGHT = true;
@@ -4116,6 +4173,8 @@ $("#addMemberBtn").onclick=addMember;
 function showIdentityScreen(canCancel){
   const screen=$("#idScreen");
   const list=$("#idList");
+  const idSub=$("#idSub");
+  if(idSub) idSub.textContent="Tap your name — this device will remember you.";
   screen.style.display="flex";
   list.innerHTML=[...STATE.members].sort((a,b)=>a.name.localeCompare(b.name)).map(m=>
     `<button class="idname" data-mid="${m.id}">${m.name}${ADMINS.includes(m.name)?'<span class="id-admin-tag"> ★</span>':''}</button>`
@@ -4161,13 +4220,20 @@ function showIdentityScreen(canCancel){
     initLiveWarm(isStale);
   });
   $("#idAddBtn").onclick=()=>{
+    const idSub=$("#idSub");
+    const idSubDefault=idSub?idSub.textContent:"";
     if(!acting || !ADMINS.includes(memberName(acting))){
-      toast("Only admins can add new members", 3000);
+      if(idSub) idSub.textContent="Only admins can add new members.";
       return;
     }
+    if(!TOKEN){
+      if(idSub) idSub.textContent="Tap your ★ name first to confirm admin, then Add member.";
+      return;
+    }
+    if(idSub) idSub.textContent=idSubDefault;
     // replace button with inline input — no prompt() needed (blocked on iOS Safari)
     $("#idAddBtn").outerHTML=`<div id="idAddWrap" style="grid-column:1/-1;display:flex;gap:8px;margin-top:4px">
-      <input id="idNameInput" type="text" placeholder="Your full name" autocomplete="name"
+      <input id="idNameInput" type="text" placeholder="New member's full name" autocomplete="name"
         style="flex:1;padding:12px 10px;border-radius:10px;border:1.5px solid var(--blue);
         background:var(--ink);color:var(--paper);font-size:14px;font-family:var(--ui);font-weight:600">
       <button id="idNameSave" style="padding:12px 16px;border-radius:10px;background:var(--blue);
@@ -4177,13 +4243,25 @@ function showIdentityScreen(canCancel){
     async function saveNewName(){
       const nm=inp.value.trim();
       if(!nm){ inp.style.borderColor="var(--red)"; return; }
-      toast("Adding member…");
+      if(STATE.members.some(m=>m.name.toLowerCase()===nm.toLowerCase())){
+        if(idSub) idSub.textContent="That name is already in the pool.";
+        inp.style.borderColor="var(--red)";
+        return;
+      }
+      const saveBtn=$("#idNameSave");
+      if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent="Saving…"; }
+      if(idSub) idSub.textContent="Adding member…";
       const r = await api("addMember", { token: TOKEN||"", name: nm });
-      if(!r.ok){ toast("Error: " + r.error, 5000); return; }
+      if(!r || !r.ok){
+        if(idSub) idSub.textContent="Couldn't add: " + ((r&&r.error)||"unknown error");
+        if(saveBtn){ saveBtn.disabled=false; saveBtn.textContent="Save"; }
+        return;
+      }
       STATE.members = (r.members||[]).map(m=>({id:m.id,name:m.name}));
       TOKEN = r.token;
       acting = STATE.members.find(m=>m.name===nm)?.id;
       Session.set("l84_token", TOKEN);
+      IDENTITY_CONFIRMED = true;
       screen.style.display="none";
       renderActing(); renderAll();
     }
@@ -4197,10 +4275,8 @@ function showIdentityScreen(canCancel){
   if(cancelBtn){ cancelBtn.style.display = canCancel ? "block" : "none"; cancelBtn.onclick=dismiss; }
 }
 $("#actingReset").onclick=async()=>{
-  TOKEN = null;
-  Session.del("l84_token");
-  // keep acting set so admin check works inside the picker
-  // it will be overwritten once a new name is chosen
+  // Keep TOKEN + acting so admin "+ Add member" on the picker still authenticates
+  // server-side; claimIdentity replaces both when a different name is chosen.
   showIdentityScreen(true);
 };
 $("#copyRecentWagersBtn").onclick=copyRecentWagers;
