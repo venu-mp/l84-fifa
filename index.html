@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
+  v187 · 2026-06-28 · Match Leaderboard player drilldown: KO picks now use
+  wagerPickHTML so tied scores show the predicted winner, matching schedule and
+  match wager surfaces.
   v186 · 2026-06-28 · KO review cleanup (pairs Code.gs v90): Activity now shows
   the previous KO winner on tied-score edits, and narrow schedule peek rows get
   a <380px grid override to avoid overflow on very small screens.
@@ -1173,12 +1176,12 @@
 
   /* player detail rows */
   /* Player detail table */
-  .ph-head,.ph-row{display:grid;grid-template-columns:0.8fr 38px 42px 16px 56px 38px 28px;gap:3px;padding:7px 2px}
+  .ph-head,.ph-row{display:grid;grid-template-columns:minmax(0,0.85fr) minmax(72px,0.75fr) 34px 6px 44px 34px 26px;gap:4px;padding:7px 2px}
   .ph-head{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700;border-bottom:1px solid var(--line);margin-bottom:2px}
   .ph-row{border-bottom:1px solid var(--line)}
   .ph-row:last-child{border-bottom:none}
   .ph-match{font-size:10.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .ph-pick{font-family:var(--mono);font-weight:800;font-size:13px;text-align:center;color:var(--blue)}
+  .ph-pick{font-family:var(--mono);font-weight:800;font-size:12.5px;text-align:center;color:var(--blue);line-height:1.15}
   .ph-res{font-family:var(--mono);font-size:13px;text-align:center;color:var(--faint)}
   .ph-res.res-known{color:var(--green)}
   .ph-chk{font-size:14px;text-align:center;font-weight:700}
@@ -4015,7 +4018,7 @@ function openPlayer(pid){
       const scrCls = scoreOk===null?"pend":scoreOk?"win":"loss";
       return `<div class="ph-row">
         <div class="ph-match">${esc(m.a)} v ${esc(m.b)}</div>
-        <div class="ph-pick">${wg.a}–${wg.b}</div>
+        <div class="ph-pick">${wagerPickHTML(wg, m, true)}</div>
         <div class="ph-res${r?' res-known':''}">${resTxt}</div>
         <div></div>
         <div class="ph-chk ${outCls}">${outStr}</div>
