@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <!--
   L'84 FIFA 2026 — version log (newest first)
-  v187 · 2026-06-28 · Match Leaderboard player drilldown: KO picks now use
-  wagerPickHTML so tied scores show the predicted winner, matching schedule and
-  match wager surfaces.
+  v190 · 2026-06-28 · Copy Recent Wagers: compact matchup spacing (single spaces
+  around v and →) so KO pick lines stay on one row when pasted into WhatsApp; KO
+  pick copy uses a colon before the advancer flag (1-1: ECU wins).
+  v189 · 2026-06-28 · Mobile app tab row: redistribute flex from Schedule/Activity to
+  Match Leaderboard/Tournament, trim phase-wrap/tabs side padding, and clip overflow.
+  v188 · 2026-06-28 · Schedule TZ row: Calif and India quick-pick buttons widen on
+  large mobile breakpoints (iPhone Pro / Pro Max); Change TZ stays compact.
+  v187 · 2026-06-28 · Match Leaderboard player drilldown: KO picks use
+  wagerPickHTML (score + predicted winner); player table grid widened so Outcome
+  and Score headers no longer overlap.
   v186 · 2026-06-28 · KO review cleanup (pairs Code.gs v90): Activity now shows
   the previous KO winner on tied-score edits, and narrow schedule peek rows get
   a <380px grid override to avoid overflow on very small screens.
@@ -561,11 +568,14 @@
     .prize{font-size:10px!important}
     .pmeta{font-size:10px!important}
     .rank{font-size:14px!important}
-    .tabs{display:flex!important;flex-wrap:nowrap;gap:4px;justify-content:space-between;align-items:stretch}
-    .tab{flex:1 1 0;display:flex;align-items:center;justify-content:center;min-height:48px;
+    .tabs{display:flex!important;flex-wrap:nowrap;gap:4px;justify-content:space-between;align-items:stretch;padding:7px 2px 0!important}
+    .tab{display:flex;align-items:center;justify-content:center;min-height:48px;overflow:hidden;
       font-size:12.5px!important;padding:10px 3px!important;line-height:1.1;white-space:nowrap}
-    .tab[data-tab="table"]{white-space:normal}
+    .tab[data-tab="schedule"],.tab[data-tab="log"]{flex:0.85 1 0}
+    .tab[data-tab="table"]{flex:1.35 1 0;white-space:normal}
+    .tab[data-tab="bonus"]{flex:1.15 1 0}
     #bonusTab.tab-highlight:not(.active){padding:9px 3px 8px!important}
+    .phase-wrap{padding-left:8px!important;padding-right:8px!important}
     .phase-tab{font-size:14px!important;padding:10px 7px 8px!important}
     .phase-tab .phase-sub{font-size:10px!important}
     .seg{font-size:14px!important;padding:13px 16px!important}
@@ -611,6 +621,20 @@
     .gbw-topscorers-btn{font-size:15px!important;padding:11px 22px!important}
     .bb-subtab-icon{width:36px;height:36px}
     .wrap{max-width:100%!important}
+  }
+  @media(min-width:380px) and (max-width:768px){
+    .tzrow-main [data-tzquick]{
+      padding:8px 16px!important;
+      min-width:68px;
+      flex:0 0 auto;
+    }
+    .segrow.tzrow .score-status{max-width:38%}
+  }
+  @media(min-width:428px) and (max-width:768px){
+    .tzrow-main [data-tzquick]{
+      padding:8px 18px!important;
+      min-width:72px;
+    }
   }
   /* Group Standings (gs-) */
   .gs-group{margin-bottom:14px}
@@ -1176,8 +1200,11 @@
 
   /* player detail rows */
   /* Player detail table */
-  .ph-head,.ph-row{display:grid;grid-template-columns:minmax(0,0.85fr) minmax(72px,0.75fr) 34px 6px 44px 34px 26px;gap:4px;padding:7px 2px}
+  .ph-head,.ph-row{display:grid;grid-template-columns:minmax(0,0.76fr) minmax(68px,0.68fr) 36px 50px 38px 26px;gap:4px;padding:7px 2px;align-items:center}
   .ph-head{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700;border-bottom:1px solid var(--line);margin-bottom:2px}
+  .ph-head > div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ph-head > div:nth-child(2),.ph-head > div:nth-child(3),.ph-head > div:nth-child(4),.ph-head > div:nth-child(5){text-align:center}
+  .ph-head > div:last-child{text-align:right}
   .ph-row{border-bottom:1px solid var(--line)}
   .ph-row:last-child{border-bottom:none}
   .ph-match{font-size:10.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1188,6 +1215,11 @@
   .ph-chk.win{color:var(--green)} .ph-chk.loss{color:var(--red)} .ph-chk.pend{color:var(--faint)}
   .ph-pts{font-family:var(--mono);font-weight:800;font-size:13px;text-align:right}
   .ph-pts.s6{color:var(--green)} .ph-pts.s3{color:var(--paper)} .ph-pts.s0{color:var(--faint)} .ph-pts.pend{color:var(--amber)}
+  @media(max-width:380px){
+    .ph-head,.ph-row{grid-template-columns:minmax(0,0.68fr) minmax(64px,0.62fr) 30px 46px 34px 22px;gap:3px}
+    .ph-head{font-size:8px;letter-spacing:.03em}
+    .ph-pick{font-size:11.5px}
+  }
   .ph-summary{display:flex;gap:14px;background:var(--surface-2);border:1px solid var(--line);
     border-radius:12px;padding:12px;margin-bottom:8px}
   .ph-summary .stat{flex:1;text-align:center}
@@ -1773,12 +1805,12 @@ function wagerPickHTML(w, m, withFlag){
   return score;
 }
 function wagerPickCopy(w, m){
-  return wagerPickText(w, m, true).replace(/–/g, "-").replace(" · ", ", ");
+  return wagerPickText(w, m, true).replace(/–/g, "-").replace(" · ", ": ");
 }
 function logWagerPickCopy(e, m){
   const score = `${e.a}-${e.b}`;
   const side = m && m.knockout ? logAdvancerSide(e) : "";
-  if(side) return `${score}, ${advancerCopy(side, m, true)}`;
+  if(side) return `${score}: ${advancerCopy(side, m, true)}`;
   return score;
 }
 
@@ -3056,6 +3088,12 @@ function crwFmtDateTime(ts){
   return { dm:`${day}-${mon}`, time:`${h}:${mm}${ampm}` };
 }
 
+function crwMatchupCopy(m){
+  // Single spaces around v — triple-space padding caused WhatsApp line wraps
+  // before "wins" on mobile paste (see v190).
+  return `${teamFlag(m.a)} ${teamCode(m.a)} v ${teamFlag(m.b)} ${teamCode(m.b)}`;
+}
+
 function copyRecentWagers(){
   // DISPLAY ONLY — collapses to the most recent event per wager target (current
   // position, not edit history); the underlying Sheet Log keeps every raw event
@@ -3123,13 +3161,12 @@ function copyRecentWagers(){
   const rows = [];
   currentMatches.forEach(e=>{
     const m = elFor(e.mN);
-    if(!m){ rows.push(`M${e.mN} →   (match not found)`); return; }
+    if(!m){ rows.push(`M${e.mN} → (match not found)`); return; }
     // Abbreviated matchup — flag + 3-letter code, no full country name —
     // to avoid long lines wrapping when pasted into WhatsApp on mobile.
     // No date prefix: within this single 3-hour-window copy, matchups are
     // unique, so a per-line date adds no disambiguating value.
-    const match = `${teamFlag(m.a)} ${teamCode(m.a)}   v   ${teamFlag(m.b)} ${teamCode(m.b)}`;
-    rows.push(`${match} →   ${logWagerPickCopy(e, m)}`);
+    rows.push(`${crwMatchupCopy(m)} → ${logWagerPickCopy(e, m)}`);
   });
   if(currentWinner.length){
     rows.push(`🏆 World Cup Winner → ${currentWinner.map(e => `${teamFlag(e.name)} ${e.name}`).join(", ")}`);
@@ -3995,12 +4032,11 @@ function openPlayer(pid){
     // column header
     body+=`<div class="ph-head">
       <div>Match</div>
-      <div style="text-align:center">PICK</div>
-      <div style="text-align:center">Result</div>
-      <div></div>
-      <div style="text-align:center">Outcome</div>
-      <div style="text-align:center">Score</div>
-      <div style="text-align:right">Pts</div>
+      <div>PICK</div>
+      <div>Result</div>
+      <div>Outcome</div>
+      <div>Score</div>
+      <div>Pts</div>
     </div>`;
     body+=rows.map(row=>{
       const r=row.r; const wg=row.wg; const p=row.p; const m=row.m;
@@ -4020,7 +4056,6 @@ function openPlayer(pid){
         <div class="ph-match">${esc(m.a)} v ${esc(m.b)}</div>
         <div class="ph-pick">${wagerPickHTML(wg, m, true)}</div>
         <div class="ph-res${r?' res-known':''}">${resTxt}</div>
-        <div></div>
         <div class="ph-chk ${outCls}">${outStr}</div>
         <div class="ph-chk ${scrCls}">${scrStr}</div>
         <div class="ph-pts ${ptCls}">${ptTxt}</div>
